@@ -11,6 +11,7 @@ from witch.state import (
     screen,
     load_screen,
     select_next,
+    selected_id,
     set_cursor,
     screen_size,
     set_screen_size,
@@ -77,7 +78,6 @@ qlmkdf
 qldlmfjqdfqsdf
 qdfqsdfqsdf
 qdfqsdf"""
-            text += f"\n{input_buffer()}"
             start_frame()
 
             start_layout("leftbar", VERTICAL, Percentage(50))

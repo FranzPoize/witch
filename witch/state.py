@@ -38,7 +38,10 @@ def add_data(id, data):
 
 
 def get_data(id):
-    return state_data[id]
+    if id in state_data:
+        return state_data[id]
+    else:
+        return False
 
 state_screen_size = (0, 0)
 

@@ -1,9 +1,10 @@
-from curses import A_BOLD, A_DIM
+from curses import A_BOLD, A_DIM, KEY_UP, KEY_DOWN
 from witch.state import (
     add_as_selectable,
     add_layout,
     get_current_id,
     get_id,
+    is_key_pressed,
     poop_id,
     push_id,
     screen,
@@ -133,8 +134,24 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     if len(title) > sizex - 4:
         title = title[: sizex - 4]
 
+    menu_data = get_data(id)
+    if not menu_data:
+        menu_data = {
+            "border_style": border_style,
+            "selected_index": 0
+        }
+    elif selected_id() == id:
+        selected_index = menu_data["selected_index"]
+        if is_key_pressed(chr(KEY_UP)):
+            menu_data["selected_index"] = selected_index - 1 if selected_index != 0 else len(menu_data["items"]) - 1
+        if is_key_pressed(chr(KEY_DOWN)):
+            menu_data["selected_index"] = (selected_index + 1) % len(menu_data["items"])
+
+    menu_data["items"] = []
+
+    add_data(id, menu_data)
+
     add_layout(id, HORIZONTAL, (sizex, sizey), (x, y))
-    add_data(id, {"border_style": border_style, "items": []})
 
     screen().addstr(
         y,
@@ -156,6 +173,11 @@ def menu_item(name):
     x, y = base_layout["pos"]
     menu_data = get_data(id)
     border_style = menu_data["border_style"]
+
+    if menu_data["selected_index"] == len(menu_data["items"]) and selected_id() == id:
+        name = "> " + name
+    else:
+        name = "  " + name
 
     menu_data["items"].append(name)
 
