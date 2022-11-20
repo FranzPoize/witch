@@ -3,6 +3,21 @@ state_data = dict()
 state_ids_stack = ["root"]
 state_layout = dict()
 state_cursor = (0, 0)
+state_screen_size = (0, 0)
+
+def add_data(id, data):
+    global state_data
+    state_data[id] = data
+
+def get_data(id):
+    return state_data[id]
+
+def screen_size():
+    return state_screen_size
+
+def set_screen_size(size):
+    global state_screen_size
+    state_screen_size = size
 
 def get_current_id():
     return state_ids_stack[-1]
@@ -38,8 +53,3 @@ def load_screen(a_screen):
 def screen():
     return state_screen
 
-def get_current_view():
-    base_y, base_x = screen().getmaxyx()
-    x, y = get_cursor()
-
-    return base_x - x, base_y - y
