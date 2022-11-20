@@ -1,4 +1,6 @@
+from curses import A_BOLD, A_DIM
 from witch.state import (
+    add_as_selectable,
     add_layout,
     get_current_id,
     get_id,
@@ -9,10 +11,11 @@ from witch.state import (
     get_layout,
     add_data,
     get_data,
-    set_cursor
+    selected_id,
+    set_cursor,
 )
 from witch.utils import Percentage, split_text_with_wrap
-from witch.layout import HORIZONTAL
+from witch.layout import HORIZONTAL, VERTICAL
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶"]
 
@@ -28,7 +31,7 @@ def text_buffer(
     border_style=BASIC_BORDER,
     wrap_lines=False,
 ):
-    id = get_id(title)
+    id = get_id(title, get_current_id())
     base_layout = get_layout(get_current_id())
     base_x, base_y = get_cursor()
     x += base_x
@@ -48,6 +51,9 @@ def text_buffer(
     if len(status) > sizex - 2:
         status = status[: sizex - 2]
 
+    # TODO: this should take into account the title length
+    # and remove the half dash (border_style 6 and 7 if the title length
+    # is sizex - 2)
     screen().addstr(
         y,
         x,
@@ -80,6 +86,9 @@ def text_buffer(
             + border_style[1],
         )
 
+    # TODO: this should take into account the title length
+    # and remove the half dash (border_style 6 and 7 if the title length
+    # is sizex - 2)
     try:
         screen().addstr(
             y + sizey - 1,
@@ -91,12 +100,22 @@ def text_buffer(
             + border_style[7]
             + border_style[4],
         )
-    except:
+    except Exception:
         pass
+
+    layout = get_layout(get_current_id())
+
+    if layout["direction"] == VERTICAL:
+        next_pos = (x, y + sizey)
+    else:
+        next_pos = (x + sizex, y)
+
+    set_cursor(next_pos)
 
 
 def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     id = get_id(title, get_current_id())
+    add_as_selectable(id)
     base_layout = get_layout(get_current_id())
     base_x, base_y = get_cursor()
     x += base_x
@@ -115,7 +134,7 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
         title = title[: sizex - 4]
 
     add_layout(id, HORIZONTAL, (sizex, sizey), (x, y))
-    add_data(id, {"border_style": border_style})
+    add_data(id, {"border_style": border_style, "items": []})
 
     screen().addstr(
         y,
@@ -126,22 +145,54 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
         + border_style[7]
         + border_style[0] * (sizex - 4 - len(title))
         + border_style[2],
+        A_BOLD if selected_id() == id else A_DIM,
+    )
+
+
+def menu_item(name):
+    id = get_current_id()
+    base_layout = get_layout(id)
+    sizex, sizey = base_layout["size"]
+    x, y = base_layout["pos"]
+    menu_data = get_data(id)
+    border_style = menu_data["border_style"]
+
+    menu_data["items"].append(name)
+
+    if len(name) > sizex - 2:
+        name = name[: sizex - 2]
+
+    screen().addstr(
+        y + len(menu_data["items"]),
+        x,
+        border_style[1] + name + " " * (sizex - 2 - len(name)) + border_style[1],
+        A_BOLD if selected_id() == id else A_DIM,
     )
 
 
 def end_menu():
-    base_layout = get_layout(get_current_id())
+    id = get_current_id()
+    base_layout = get_layout(id)
     sizex, sizey = base_layout["size"]
     x, y = base_layout["pos"]
-    menu_data = get_data(get_current_id())
+    menu_data = get_data(id)
     border_style = menu_data["border_style"]
     poop_id()
+
+    for i in range(len(menu_data["items"]) + 1, sizey - 1):
+        screen().addstr(
+            y + i,
+            x,
+            border_style[1] + " " * (sizex - 2) + border_style[1],
+            A_BOLD if selected_id() == id else A_DIM,
+        )
 
     try:
         screen().addstr(
             y + sizey - 1,
             x,
             border_style[3] + border_style[0] * (sizex - 2) + border_style[4],
+            A_BOLD if selected_id() == id else A_DIM,
         )
     except Exception:
         pass

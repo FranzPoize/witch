@@ -5,32 +5,53 @@ from witch.state import (
     add_layout,
     get_current_id,
     get_id,
+    get_selectables,
+    input_buffer,
+    is_key_pressed,
     screen,
     load_screen,
+    select_next,
     set_cursor,
     screen_size,
     set_screen_size,
+    set_key_state,
+    is_key_pressed,
+    set_selected_id
 )
-from witch.widgets import text_buffer, start_menu, end_menu
+from witch.widgets import menu_item, text_buffer, start_menu, end_menu, menu_item
 from witch.layout import start_layout, end_layout, HORIZONTAL, VERTICAL
 from witch.utils import Percentage
 
 
 def start_frame():
+    # setting up root
     id = get_id("root")
     y, x = screen().getmaxyx()
     add_layout(id, VERTICAL, (x, y), (0, 0))
+
+    # handle screen resize
     old_x, old_y = screen_size()
     y, x = screen().getmaxyx()
     if old_x != x or old_y != y:
         set_screen_size((x, y))
         screen().clear()
 
+    # capture input
+    set_key_state(screen().getch())
+
+    # clear selectables pre frame
+    get_selectables().clear()
+
+
 
 def end_frame():
     if get_current_id() != "root":
         raise Exception("Stack is not clean probably missing end_layout")
     set_cursor((0, 0))
+
+    if input_buffer() == 9:
+        select_next()
+
     screen().refresh()
 
 
@@ -46,8 +67,7 @@ def do_curses(astdscr):
         while True:
             fps = 1.0 / (end - start)
             start = perf_counter()
-            key = screen().getch()
-            if key != -1 and chr(key) == "q":
+            if is_key_pressed("q"):
                 quit()
             screen().addstr(0, 0, f"Current mode {i} at {fps}", A_REVERSE)
             set_cursor((0,1))
@@ -57,18 +77,45 @@ qlmkdf
 qldlmfjqdfqsdf
 qdfqsdfqsdf
 qdfqsdf"""
+            text += f"\n{input_buffer()}"
             start_frame()
 
             start_layout("leftbar", VERTICAL, Percentage(50))
             text_buffer(
-                "Hello", 0, 0, Percentage(100), Percentage(100), text, status="0/3"
+                "Hello", 0, 0, Percentage(100), Percentage(50), text, status="0/3"
             )
             end_layout()
 
-            start_menu("Menu", 0, 0, 10, Percentage(50))
+            start_menu("Menu2", 0, 0, Percentage(50), Percentage(20))
+            menu_item("allo")
+            menu_item("baba1")
+            menu_item("baba2")
+            menu_item("baba3")
+            menu_item("baba4")
+            menu_item("baba5")
+            menu_item("baba6")
+            menu_item("baba7")
+            menu_item("baba8")
+            menu_item("baba9")
+            menu_item("baba10")
+            menu_item("baba11")
             end_menu()
 
-            text_buffer("Hello2", 0, 0, 10, 20, "haha", status="0/3")
+            start_menu("Menu", 0, 0, Percentage(50), Percentage(20))
+            menu_item("allo")
+            menu_item("baba1")
+            menu_item("baba2")
+            menu_item("baba3")
+            menu_item("baba4")
+            menu_item("baba5")
+            menu_item("baba6")
+            menu_item("baba7")
+            menu_item("baba8")
+            menu_item("baba9")
+            menu_item("baba10")
+            menu_item("baba11")
+            end_menu()
+
 
             end_frame()
             end = perf_counter()
