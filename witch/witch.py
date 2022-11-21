@@ -1,4 +1,4 @@
-from curses import wrapper, A_REVERSE, is_term_resized, initscr
+from curses import start_color, wrapper, A_REVERSE, is_term_resized, initscr
 from time import perf_counter
 
 from witch.layout_state import (
@@ -22,7 +22,7 @@ from witch.state import (
     is_key_pressed,
     set_selected_id
 )
-from witch.widgets import menu_item, text_buffer, start_menu, end_menu, menu_item
+from witch.widgets import menu_item, text_buffer, start_panel, end_panel, menu_item
 from witch.layout import start_layout, end_layout, HORIZONTAL, VERTICAL
 from witch.utils import Percentage
 
@@ -60,6 +60,7 @@ def end_frame():
 
 
 def do_curses(astdscr):
+    start_color()
     load_screen(astdscr)
     screen().nodelay(True)
     screen().clear()
@@ -98,11 +99,14 @@ qdfqsdf"""
             for i in range(100):
                 data.append(f"hello {i}")
 
-            start_menu("Menu2", 0, 0, Percentage(50), Percentage(20))
+            start_panel("Menu2", 0, 0, Percentage(50), Percentage(20))
             for item in data:
                 if menu_item(item):
                     test = item
-            end_menu()
+            end_panel()
+
+            start_panel("Text panel", 0, 0, Percentage(50), 30)
+            end_panel()
 
 
             end_frame()

@@ -1,4 +1,4 @@
-from curses import A_BOLD, A_DIM, KEY_UP, KEY_DOWN
+from curses import A_BOLD, A_DIM, COLOR_BLACK, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE, KEY_UP, KEY_DOWN, A_REVERSE, init_pair, color_pair
 from witch.layout_state import (
     add_layout,
     get_layout,
@@ -21,7 +21,6 @@ from witch.utils import Percentage, split_text_with_wrap, get_scrolling_info
 from witch.layout import HORIZONTAL, VERTICAL
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
-
 
 def text_buffer(
     title,
@@ -116,7 +115,7 @@ def text_buffer(
     set_cursor(next_pos)
 
 
-def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
+def start_panel(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     id = get_id(title, get_current_id())
     add_as_selectable(id)
     base_layout = get_layout(get_current_id())
@@ -124,6 +123,7 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     x += base_x
     y += base_y
     push_id(id)
+    init_pair(10, COLOR_GREEN, COLOR_BLACK)
 
     base_size_x, base_size_y = base_layout.size
 
@@ -136,9 +136,9 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     if len(title) > sizex - 4:
         title = title[: sizex - 4]
 
-    menu_data = get_data(id)
-    if not menu_data:
-        menu_data = {
+    panel_data = get_data(id)
+    if not panel_data:
+        panel_data = {
             "border_style": border_style,
             "selected_index": 0,
             "scroll_position": 0,
@@ -147,33 +147,35 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
             "items": [],
         }
 
-    menu_data["max_items"] = len(menu_data["items"]) if len(menu_data["items"]) > 0 else 1
+    panel_data["max_items"] = len(panel_data["items"]) if len(panel_data["items"]) > 0 else 1
 
     # Find out if we need scrolling
-    if len(menu_data["items"]) > sizey - 2:
-        menu_data["needs_scrolling"] = True
+    if len(panel_data["items"]) > sizey - 2:
+        panel_data["needs_scrolling"] = True
 
+    color = A_DIM
     # Scrolling items
     if selected_id() == id:
-        selected_index = menu_data["selected_index"]
+        color = A_BOLD | color_pair(10)
+        selected_index = panel_data["selected_index"]
         if is_key_pressed(chr(KEY_UP)):
-            menu_data["selected_index"] = (
+            panel_data["selected_index"] = (
                 selected_index - 1
                 if selected_index != 0
-                else len(menu_data["items"]) - 1
+                else len(panel_data["items"]) - 1
             )
         if is_key_pressed(chr(KEY_DOWN)):
-            menu_data["selected_index"] = (selected_index + 1) % len(menu_data["items"])
+            panel_data["selected_index"] = (selected_index + 1) % len(panel_data["items"])
 
-    if menu_data["selected_index"] + 1 > menu_data["scroll_position"] + sizey - 2:
-        menu_data["scroll_position"] += 1
+    if panel_data["selected_index"] + 1 > panel_data["scroll_position"] + sizey - 2:
+        panel_data["scroll_position"] += 1
 
-    if menu_data["selected_index"] < menu_data["scroll_position"]:
-        menu_data["scroll_position"] -= 1
+    if panel_data["selected_index"] < panel_data["scroll_position"]:
+        panel_data["scroll_position"] -= 1
 
-    menu_data["items"] = []
+    panel_data["items"] = []
 
-    add_data(id, menu_data)
+    add_data(id, panel_data)
 
     add_layout(id, HORIZONTAL, (sizex, sizey), (x, y))
 
@@ -186,7 +188,7 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
         + border_style[7]
         + border_style[0] * (sizex - 4 - len(title))
         + border_style[2],
-        A_BOLD if selected_id() == id else A_DIM,
+        color,
     )
 
 
@@ -195,16 +197,22 @@ def menu_item(name):
     base_layout = get_layout(id)
     sizex, sizey = base_layout.size
     x, y = base_layout.pos
-    menu_data = get_data(id)
-    border_style = menu_data["border_style"]
-    items = menu_data["items"]
-    scroll_position = menu_data["scroll_position"]
+    panel_data = get_data(id)
+    border_style = panel_data["border_style"]
+    items = panel_data["items"]
+    scroll_position = panel_data["scroll_position"]
 
+    init_pair(9, COLOR_WHITE, COLOR_BLUE)
 
-    if menu_data["selected_index"] == len(items) and selected_id() == id:
-        name = "> " + name
-    else:
-        name = "  " + name
+    color = A_DIM
+    border_color = A_DIM
+
+    if selected_id() == id:
+        color = A_BOLD
+        border_color = A_BOLD | color_pair(10)
+
+    if panel_data["selected_index"] == len(items) and selected_id() == id:
+        color |= color_pair(9) 
 
     items.append(name)
 
@@ -218,9 +226,9 @@ def menu_item(name):
         name = name[: sizex - 2]
 
     end_border = border_style[1]
-    if menu_data["needs_scrolling"]:
+    if panel_data["needs_scrolling"]:
         start, in_bar, end = get_scrolling_info(len(items) - 1,
-                                                    menu_data["max_items"],
+                                                    panel_data["max_items"],
                                                     sizey - 2,
                                                     scroll_position)
         if start:
@@ -233,33 +241,49 @@ def menu_item(name):
     screen().addstr(
         y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
         x,
-        border_style[1] + name + " " * (sizex - 2 - len(name)) + end_border,
-        A_BOLD if selected_id() == id else A_DIM,
+        border_style[1],
+        border_color,
+    )
+    screen().addstr(
+        y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
+        x + 1,
+        name + " " * (sizex - 2 - len(name)),
+        color,
+    )
+    screen().addstr(
+        y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
+        x + sizex - 1,
+        end_border,
+        border_color,
     )
 
     if (
         selected_id() == id
-        and menu_data["selected_index"] == len(items) - 1
+        and panel_data["selected_index"] == len(items) - 1
         and is_key_pressed("\n")
     ):
         return True
 
 
-def end_menu():
+def end_panel():
     id = get_current_id()
     base_layout = get_layout(id)
     sizex, sizey = base_layout.size
     x, y = base_layout.pos
-    menu_data = get_data(id)
-    border_style = menu_data["border_style"]
+    panel_data = get_data(id)
+    border_style = panel_data["border_style"]
     poop_id()
 
-    for i in range(len(menu_data["items"]) + 1, sizey - 1):
+    color = A_DIM
+    if selected_id() == id:
+        color = A_BOLD | color_pair(10)
+
+    for i in range(len(panel_data["items"]) + 1, sizey - 1):
         screen().addstr(
             y + i,
             x,
             border_style[1] + " " * (sizex - 2) + border_style[1],
-            A_BOLD if selected_id() == id else A_DIM,
+            color,
         )
 
     try:
@@ -267,7 +291,7 @@ def end_menu():
             y + sizey - 1,
             x,
             border_style[3] + border_style[0] * (sizex - 2) + border_style[4],
-            A_BOLD if selected_id() == id else A_DIM,
+            color,
         )
     except Exception:
         pass
