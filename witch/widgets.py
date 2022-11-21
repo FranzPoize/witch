@@ -1,7 +1,10 @@
 from curses import A_BOLD, A_DIM, KEY_UP, KEY_DOWN
+from witch.layout_state import (
+    add_layout,
+    get_layout,
+)
 from witch.state import (
     add_as_selectable,
-    add_layout,
     get_current_id,
     get_id,
     is_key_pressed,
@@ -9,7 +12,6 @@ from witch.state import (
     push_id,
     screen,
     get_cursor,
-    get_layout,
     add_data,
     get_data,
     selected_id,
@@ -38,7 +40,7 @@ def text_buffer(
     x += base_x
     y += base_y
 
-    base_size_x, base_size_y = base_layout["size"]
+    base_size_x, base_size_y = base_layout.size
 
     if isinstance(sizey, Percentage):
         sizey = sizey.value(base_size_y)
@@ -106,7 +108,7 @@ def text_buffer(
 
     layout = get_layout(get_current_id())
 
-    if layout["direction"] == VERTICAL:
+    if layout.direction == VERTICAL:
         next_pos = (x, y + sizey)
     else:
         next_pos = (x + sizex, y)
@@ -123,7 +125,7 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     y += base_y
     push_id(id)
 
-    base_size_x, base_size_y = base_layout["size"]
+    base_size_x, base_size_y = base_layout.size
 
     if isinstance(sizey, Percentage):
         sizey = sizey.value(base_size_y)
@@ -169,8 +171,8 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
 def menu_item(name):
     id = get_current_id()
     base_layout = get_layout(id)
-    sizex, sizey = base_layout["size"]
-    x, y = base_layout["pos"]
+    sizex, sizey = base_layout.size
+    x, y = base_layout.pos
     menu_data = get_data(id)
     border_style = menu_data["border_style"]
 
@@ -195,8 +197,8 @@ def menu_item(name):
 def end_menu():
     id = get_current_id()
     base_layout = get_layout(id)
-    sizex, sizey = base_layout["size"]
-    x, y = base_layout["pos"]
+    sizex, sizey = base_layout.size
+    x, y = base_layout.pos
     menu_data = get_data(id)
     border_style = menu_data["border_style"]
     poop_id()
@@ -219,5 +221,5 @@ def end_menu():
     except Exception:
         pass
 
-    next_pos = (base_layout["pos"][0], base_layout["pos"][1] + base_layout["size"][1])
+    next_pos = (base_layout.pos[0], base_layout.pos[1] + base_layout.size[1])
     set_cursor(next_pos)

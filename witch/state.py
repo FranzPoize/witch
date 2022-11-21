@@ -1,7 +1,6 @@
 from types import new_class
 
-
-state_selectable_ids = [] 
+state_selectable_ids: list[str] = [] 
 
 def add_as_selectable(id):
     global state_selectable_ids
@@ -81,15 +80,6 @@ def poop_id():
     id = state_ids_stack[-1]
     state_ids_stack.pop()
     return id
-
-state_layout = dict()
-
-def add_layout(id, direction, size, pos):
-    state_layout[id] = {"direction": direction, "size": size, "pos": pos}
-
-
-def get_layout(id):
-    return state_layout[id]
 
 state_screen = None
 

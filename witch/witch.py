@@ -1,8 +1,11 @@
 from curses import wrapper, A_REVERSE, is_term_resized
 from time import perf_counter
 
-from witch.state import (
+from witch.layout_state import (
     add_layout,
+)
+
+from witch.state import (
     get_current_id,
     get_id,
     get_selectables,
@@ -82,7 +85,7 @@ qdfqsdf"""
 
             start_layout("leftbar", VERTICAL, Percentage(50))
             text_buffer(
-                "Hello", 0, 0, Percentage(100), Percentage(50), text, status="0/3"
+                "Hello", 0, 0, Percentage(100), Percentage(100) - 1, text, status="0/3"
             )
             end_layout()
 
