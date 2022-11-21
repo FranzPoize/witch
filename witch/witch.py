@@ -95,7 +95,7 @@ qdfqsdf"""
 
             data = []
 
-            for i in range(10):
+            for i in range(100):
                 data.append(f"hello {i}")
 
             start_menu("Menu2", 0, 0, Percentage(50), Percentage(20))

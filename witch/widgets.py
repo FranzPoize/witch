@@ -20,7 +20,7 @@ from witch.state import (
 from witch.utils import Percentage, split_text_with_wrap
 from witch.layout import HORIZONTAL, VERTICAL
 
-BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶"]
+BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
 
 
 def text_buffer(
@@ -142,11 +142,26 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
             "border_style": border_style,
             "selected_index": 0,
             "scroll_position": 0,
+            "needs_scrolling": False,
+            "max_items" : 1,
+            "items": [],
         }
-    elif selected_id() == id:
+
+    menu_data["max_items"] = len(menu_data["items"]) if len(menu_data["items"]) > 0 else 1
+
+    # Find out if we need scrolling
+    if len(menu_data["items"]) > sizey - 2:
+        menu_data["needs_scrolling"] = True
+
+    # Scrolling items
+    if selected_id() == id:
         selected_index = menu_data["selected_index"]
         if is_key_pressed(chr(KEY_UP)):
-            menu_data["selected_index"] = selected_index - 1 if selected_index != 0 else len(menu_data["items"]) - 1
+            menu_data["selected_index"] = (
+                selected_index - 1
+                if selected_index != 0
+                else len(menu_data["items"]) - 1
+            )
         if is_key_pressed(chr(KEY_DOWN)):
             menu_data["selected_index"] = (selected_index + 1) % len(menu_data["items"])
 
@@ -190,20 +205,43 @@ def menu_item(name):
 
     menu_data["items"].append(name)
 
-    if len(menu_data["items"]) - 1 < menu_data["scroll_position"] or len(menu_data["items"]) > menu_data["scroll_position"] + sizey - 2:
+    if (
+        len(menu_data["items"]) - 1 < menu_data["scroll_position"]
+        or len(menu_data["items"]) > menu_data["scroll_position"] + sizey - 2
+    ):
         return
 
     if len(name) > sizex - 2:
         name = name[: sizex - 2]
 
+    end_border = border_style[1]
+    scroll_offset_index = len(menu_data["items"]) - menu_data["scroll_position"] - 1
+    scroll_oversize = (menu_data["max_items"] - (sizey - 2))
+    scroller_size = max(1, (sizey - 4) - scroll_oversize)
+    scroll_ratio = scroll_oversize / - (scroller_size - (sizey - 4))
+
+    if menu_data["needs_scrolling"]:
+        if scroll_offset_index == 0:
+            end_border = border_style[8]
+        elif scroll_offset_index == sizey - 3: 
+            end_border = border_style[9]
+        elif scroll_offset_index > menu_data["scroll_position"] / scroll_ratio and scroll_offset_index - 1 < menu_data["scroll_position"] / scroll_ratio + scroller_size:
+            end_border = border_style[10]
+
+    name += f"{scroll_offset_index} - {scroller_size}"
+
     screen().addstr(
-        y + len(menu_data["items"]) - menu_data["scroll_position"],
+        y + scroll_offset_index + 1, # + 1 because we're in menu coordinates and 0 is the title line
         x,
-        border_style[1] + name + " " * (sizex - 2 - len(name)) + border_style[1],
+        border_style[1] + name + " " * (sizex - 2 - len(name)) + end_border,
         A_BOLD if selected_id() == id else A_DIM,
     )
 
-    if selected_id() == id and menu_data["selected_index"] == len(menu_data["items"]) - 1 and is_key_pressed("\n"):
+    if (
+        selected_id() == id
+        and menu_data["selected_index"] == len(menu_data["items"]) - 1
+        and is_key_pressed("\n")
+    ):
         return True
 
 
