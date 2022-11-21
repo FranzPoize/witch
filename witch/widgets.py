@@ -197,17 +197,20 @@ def menu_item(name):
     x, y = base_layout.pos
     menu_data = get_data(id)
     border_style = menu_data["border_style"]
+    items = menu_data["items"]
+    scroll_position = menu_data["scroll_position"]
 
-    if menu_data["selected_index"] == len(menu_data["items"]) and selected_id() == id:
+
+    if menu_data["selected_index"] == len(items) and selected_id() == id:
         name = "> " + name
     else:
         name = "  " + name
 
-    menu_data["items"].append(name)
+    items.append(name)
 
     if (
-        len(menu_data["items"]) - 1 < menu_data["scroll_position"]
-        or len(menu_data["items"]) > menu_data["scroll_position"] + sizey - 2
+        len(items) - 1 < scroll_position
+        or len(items) > scroll_position + sizey - 2
     ):
         return
 
@@ -216,10 +219,10 @@ def menu_item(name):
 
     end_border = border_style[1]
     if menu_data["needs_scrolling"]:
-        start, in_bar, end = get_scrolling_info(len(menu_data["items"]) - 1,
+        start, in_bar, end = get_scrolling_info(len(items) - 1,
                                                     menu_data["max_items"],
                                                     sizey - 2,
-                                                    menu_data["scroll_position"])
+                                                    scroll_position)
         if start:
             end_border = border_style[8]
         elif end: 
@@ -228,7 +231,7 @@ def menu_item(name):
             end_border = border_style[10]
 
     screen().addstr(
-        y + len(menu_data["items"]) - menu_data["scroll_position"], # + 1 because we're in menu coordinates and 0 is the title line
+        y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
         x,
         border_style[1] + name + " " * (sizex - 2 - len(name)) + end_border,
         A_BOLD if selected_id() == id else A_DIM,
@@ -236,7 +239,7 @@ def menu_item(name):
 
     if (
         selected_id() == id
-        and menu_data["selected_index"] == len(menu_data["items"]) - 1
+        and menu_data["selected_index"] == len(items) - 1
         and is_key_pressed("\n")
     ):
         return True
