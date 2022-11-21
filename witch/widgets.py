@@ -17,7 +17,7 @@ from witch.state import (
     selected_id,
     set_cursor,
 )
-from witch.utils import Percentage, split_text_with_wrap
+from witch.utils import Percentage, split_text_with_wrap, get_scrolling_info
 from witch.layout import HORIZONTAL, VERTICAL
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
@@ -215,23 +215,20 @@ def menu_item(name):
         name = name[: sizex - 2]
 
     end_border = border_style[1]
-    scroll_offset_index = len(menu_data["items"]) - menu_data["scroll_position"] - 1
-    scroll_oversize = (menu_data["max_items"] - (sizey - 2))
-    scroller_size = max(1, (sizey - 4) - scroll_oversize)
-    scroll_ratio = scroll_oversize / - (scroller_size - (sizey - 4))
-
     if menu_data["needs_scrolling"]:
-        if scroll_offset_index == 0:
+        start, in_bar, end = get_scrolling_info(len(menu_data["items"]) - 1,
+                                                    menu_data["max_items"],
+                                                    sizey - 2,
+                                                    menu_data["scroll_position"])
+        if start:
             end_border = border_style[8]
-        elif scroll_offset_index == sizey - 3: 
+        elif end: 
             end_border = border_style[9]
-        elif scroll_offset_index > menu_data["scroll_position"] / scroll_ratio and scroll_offset_index - 1 < menu_data["scroll_position"] / scroll_ratio + scroller_size:
+        elif in_bar:
             end_border = border_style[10]
 
-    name += f"{scroll_offset_index} - {scroller_size}"
-
     screen().addstr(
-        y + scroll_offset_index + 1, # + 1 because we're in menu coordinates and 0 is the title line
+        y + len(menu_data["items"]) - menu_data["scroll_position"], # + 1 because we're in menu coordinates and 0 is the title line
         x,
         border_style[1] + name + " " * (sizex - 2 - len(name)) + end_border,
         A_BOLD if selected_id() == id else A_DIM,
