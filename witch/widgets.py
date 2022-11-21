@@ -203,6 +203,9 @@ def menu_item(name):
         A_BOLD if selected_id() == id else A_DIM,
     )
 
+    if selected_id() == id and menu_data["selected_index"] == len(menu_data["items"]) - 1 and is_key_pressed("\n"):
+        return True
+
 
 def end_menu():
     id = get_current_id()

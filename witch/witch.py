@@ -1,4 +1,4 @@
-from curses import wrapper, A_REVERSE, is_term_resized
+from curses import wrapper, A_REVERSE, is_term_resized, initscr
 from time import perf_counter
 
 from witch.layout_state import (
@@ -67,6 +67,7 @@ def do_curses(astdscr):
     fps = 0
     start = 0
     end = 1
+    test = ""
     try:
         while True:
             fps = 1.0 / (end - start)
@@ -81,6 +82,9 @@ qlmkdf
 qldlmfjqdfqsdf
 qdfqsdfqsdf
 qdfqsdf"""
+
+            text += f"\n{test}"
+
             start_frame()
 
             start_layout("leftbar", VERTICAL, Percentage(50))
@@ -89,34 +93,15 @@ qdfqsdf"""
             )
             end_layout()
 
-            start_menu("Menu2", 0, 0, Percentage(50), Percentage(20))
-            menu_item("allo")
-            menu_item("baba1")
-            menu_item("baba2")
-            menu_item("baba3")
-            menu_item("baba4")
-            menu_item("baba5")
-            menu_item("baba6")
-            menu_item("baba7")
-            menu_item("baba8")
-            menu_item("baba9")
-            menu_item("baba10")
-            menu_item("baba11")
-            end_menu()
+            data = []
 
-            start_menu("Menu", 0, 0, Percentage(50), Percentage(20))
-            menu_item("allo")
-            menu_item("baba1")
-            menu_item("baba2")
-            menu_item("baba3")
-            menu_item("baba4")
-            menu_item("baba5")
-            menu_item("baba6")
-            menu_item("baba7")
-            menu_item("baba8")
-            menu_item("baba9")
-            menu_item("baba10")
-            menu_item("baba11")
+            for i in range(10):
+                data.append(f"hello {i}")
+
+            start_menu("Menu2", 0, 0, Percentage(50), Percentage(20))
+            for item in data:
+                if menu_item(item):
+                    test = item
             end_menu()
 
 
