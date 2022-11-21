@@ -140,7 +140,8 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     if not menu_data:
         menu_data = {
             "border_style": border_style,
-            "selected_index": 0
+            "selected_index": 0,
+            "scroll_position": 0,
         }
     elif selected_id() == id:
         selected_index = menu_data["selected_index"]
@@ -148,6 +149,12 @@ def start_menu(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
             menu_data["selected_index"] = selected_index - 1 if selected_index != 0 else len(menu_data["items"]) - 1
         if is_key_pressed(chr(KEY_DOWN)):
             menu_data["selected_index"] = (selected_index + 1) % len(menu_data["items"])
+
+    if menu_data["selected_index"] + 1 > menu_data["scroll_position"] + sizey - 2:
+        menu_data["scroll_position"] += 1
+
+    if menu_data["selected_index"] < menu_data["scroll_position"]:
+        menu_data["scroll_position"] -= 1
 
     menu_data["items"] = []
 
@@ -183,11 +190,14 @@ def menu_item(name):
 
     menu_data["items"].append(name)
 
+    if len(menu_data["items"]) - 1 < menu_data["scroll_position"] or len(menu_data["items"]) > menu_data["scroll_position"] + sizey - 2:
+        return
+
     if len(name) > sizex - 2:
         name = name[: sizex - 2]
 
     screen().addstr(
-        y + len(menu_data["items"]),
+        y + len(menu_data["items"]) - menu_data["scroll_position"],
         x,
         border_style[1] + name + " " * (sizex - 2 - len(name)) + border_style[1],
         A_BOLD if selected_id() == id else A_DIM,

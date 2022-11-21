@@ -1,4 +1,5 @@
-from types import new_class
+import curses
+from typing import Optional, Union
 
 state_selectable_ids: list[str] = [] 
 
@@ -36,7 +37,7 @@ def add_data(id, data):
     state_data[id] = data
 
 
-def get_data(id):
+def get_data(id) -> Union[dict, bool]:
     if id in state_data:
         return state_data[id]
     else:
@@ -81,14 +82,16 @@ def poop_id():
     state_ids_stack.pop()
     return id
 
-state_screen = None
+state_screen: Optional["curses._CursesWindow"] = None
 
 def load_screen(a_screen):
     global state_screen
     state_screen = a_screen
 
 
-def screen():
+def screen() -> "curses._CursesWindow":
+    if state_screen is None:
+        raise Exception("Curse window has not been loaded")
     return state_screen
 
 
