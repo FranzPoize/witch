@@ -53,6 +53,8 @@ from witch.utils import Percentage
 
 def witch_init(screen):
     start_color()
+    screen.nodelay(True)
+    screen.clear()
     load_screen(screen)
     add_color("panel_selected", COLOR_GREEN, COLOR_BLACK, [A_BOLD])
     add_bg_color(COLOR_BLACK, COLOR_BLUE)
@@ -89,12 +91,9 @@ def end_frame():
 
     screen().refresh()
 
-
 def do_curses(astdscr):
     witch_init(astdscr)
     add_text_color("test", COLOR_MAGENTA)
-    screen().nodelay(True)
-    screen().clear()
     frame_count = 0
     fps = [0] * 100
     start = 0

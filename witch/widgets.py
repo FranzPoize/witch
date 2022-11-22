@@ -335,7 +335,6 @@ def text_item(content, line_sizex=None):
         raise Exception("No panel data in menu_item. Probably missing encircling panel")
 
     border_style = panel_data["border_style"]
-    items_len = panel_data["items_len"]
     scroll_position = panel_data["scroll_position"]
     same_line_mode = panel_data["same_line_mode"]
 
@@ -347,6 +346,8 @@ def text_item(content, line_sizex=None):
 
     if not same_line_mode:
         panel_data["items_len"] += 1
+
+    items_len = panel_data["items_len"]
 
     if items_len - 1 < scroll_position or items_len > scroll_position + sizey - 2:
         return
@@ -414,6 +415,7 @@ def text_item(content, line_sizex=None):
     )
 
     if not same_line_mode:
+        x -= 1
         screen().addstr(
             y,  # + 1 because we're in menu coordinates and 0 is the title line
             x + sizex - 1,
@@ -441,7 +443,8 @@ def end_panel():
     id = get_current_id()
     base_layout = get_layout(id)
     sizex, sizey = base_layout.size
-    x, y = base_layout.pos
+    base_x, base_y = base_layout.pos
+    x, y = get_cursor()
     panel_data = get_data(id)
 
     if not panel_data:
@@ -452,7 +455,7 @@ def end_panel():
 
     color = get_border_color(id)
 
-    for i in range(0, sizey - (panel_data["items_len"])):
+    for i in range(0, sizey - ((panel_data["items_len"] + 2))):
         try:
             screen().addstr(
                 y + i,
@@ -465,7 +468,7 @@ def end_panel():
 
     try:
         screen().addstr(
-            y + sizey - 1,
+            sizey - 1,
             x,
             border_style[3] + border_style[0] * (sizex - 2) + border_style[4],
             color,
@@ -473,5 +476,9 @@ def end_panel():
     except Exception:
         pass
 
-    next_pos = (base_layout.pos[0], base_layout.pos[1] + base_layout.size[1])
+    if base_layout.direction == VERTICAL:
+        next_pos = (base_x, base_y + sizey)
+    else:
+        next_pos = (base_x + sizex, base_y)
+
     set_cursor(next_pos)
