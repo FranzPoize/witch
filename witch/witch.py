@@ -1,4 +1,7 @@
+from itertools import accumulate
 from curses import (
+    A_DIM,
+    COLOR_MAGENTA,
     start_color,
     wrapper,
     COLOR_BLUE,
@@ -15,7 +18,9 @@ from witch.layout_state import (
 )
 
 from witch.state import (
+    add_bg_color,
     add_color,
+    add_text_color,
     get_current_id,
     get_id,
     get_selectables,
@@ -50,7 +55,8 @@ def witch_init(screen):
     start_color()
     load_screen(screen)
     add_color("panel_selected", COLOR_GREEN, COLOR_BLACK, [A_BOLD])
-    add_color("item_hovered", COLOR_WHITE, COLOR_BLUE)
+    add_bg_color(COLOR_BLACK, COLOR_BLUE)
+    add_text_color("default", COLOR_WHITE, [A_DIM])
 
 
 def start_frame():
@@ -86,22 +92,26 @@ def end_frame():
 
 def do_curses(astdscr):
     witch_init(astdscr)
+    add_text_color("test", COLOR_MAGENTA)
     screen().nodelay(True)
     screen().clear()
-    i = 0
-    fps = 0
+    frame_count = 0
+    fps = [0] * 100
     start = 0
     end = 1
     test = ""
     try:
         while True:
-            fps = 1.0 / (end - start)
+            fps[frame_count % 100] = 1.0 / (end - start)
+            real_fps = accumulate(fps)
+            for i in real_fps:
+                real_fps = i / 100
             start = perf_counter()
             if is_key_pressed("q"):
                 quit()
-            screen().addstr(0, 0, f"Current mode {i} at {fps}", A_REVERSE)
+            screen().addstr(0, 0, f"Current mode {frame_count} at {real_fps}", A_REVERSE)
             set_cursor((0, 1))
-            i += 1
+            frame_count += 1
             text = """lmkqjdfklq
 qlmkdf
 qldlmfjqdfqsdf
@@ -123,7 +133,7 @@ qdfqsdf"""
             for i in range(100):
                 data.append(f"hello {i}")
 
-            start_panel("Menu2", 22, Percentage(20))
+            start_panel("Menu2", Percentage(51), Percentage(20))
             for item in data:
                 start_same_line()
                 if text_item(
@@ -131,7 +141,7 @@ qdfqsdf"""
                     10
                 ):
                     test = item
-                text_item("same_line", 10)
+                text_item(("same_line", "test"))
                 end_same_line()
             end_panel()
 

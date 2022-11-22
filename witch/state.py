@@ -120,6 +120,15 @@ def input_buffer():
 current_color_index = 9 
 colors_index = dict()
 color_mods = dict()
+hovered_color = None
+not_hovered_color = None
+
+def add_bg_color(not_hovered, hovered):
+    global not_hovered_color
+    global hovered_color
+
+    not_hovered_color = not_hovered
+    hovered_color = hovered
 
 def add_color(name, foreground, background, mods=[]):
     global colors_index
@@ -129,7 +138,27 @@ def add_color(name, foreground, background, mods=[]):
     curses.init_pair(current_color_index, foreground, background)
     colors_index[name] = current_color_index
     color_mods[name] = mods
-    current_color_index += 1
+    current_color_index += 1 
+
+
+def add_text_color(name, foreground, mods=[]):
+    global colors_index
+    global current_color_index
+    global color_mods
+
+    if not_hovered_color is None:
+        raise Exception("Not hovered color is not set")
+
+    if hovered_color is None:
+        raise Exception("Hovered color is not set")
+
+    curses.init_pair(current_color_index, foreground, not_hovered_color)
+    curses.init_pair(current_color_index + 1, foreground, hovered_color)
+    colors_index[name] = current_color_index
+    colors_index[name + "_hovered"] = current_color_index + 1
+    color_mods[name] = mods
+    color_mods[name + "_hovered"] = mods + [curses.A_BOLD]
+    current_color_index += 2 
 
 def get_color(name):
     mods = 0

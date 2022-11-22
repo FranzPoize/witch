@@ -151,11 +151,11 @@ def get_border_color(id):
         return A_DIM
 
 
-def get_item_color(id, panel_data, items_len):
+def get_item_color(id, panel_data, items_len, name="default"):
     if panel_data["selected_index"] == items_len and selected_id() == id:
-        return get_color("item_hovered")
+        return get_color(f"{name}_hovered")
     else:
-        return A_DIM
+        return get_color(f"{name}")
 
 
 def print_first_elem():
@@ -324,7 +324,7 @@ def start_panel(title, sizex, sizey, border_style=BASIC_BORDER):
     set_cursor((x, y + 1))
 
 
-def text_item(name, line_sizex=None):
+def text_item(content, line_sizex=None):
     id = get_current_id()
     base_layout = get_layout(id)
     x, y = get_cursor()
@@ -356,11 +356,21 @@ def text_item(name, line_sizex=None):
     if same_line_mode:
         printable_size = sizex
 
-    if len(name) > printable_size:
-        name = name[:printable_size]
+    strings = []
+
+    if isinstance(content, tuple):
+        strings.append(content)
+    elif not isinstance(content, list):
+        strings.append((content, "default"))
+    else:
+        for c in content:
+            if isinstance(c, tuple):
+                strings.append(c)
+            else:
+                strings.append((c, "default"))
+
 
     border_color = get_border_color(id)
-    color = get_item_color(id, panel_data, items_len - 1)
 
     end_border = get_scrolling_border(
         items_len - 1,
@@ -379,10 +389,27 @@ def text_item(name, line_sizex=None):
         )
         x += 1
 
+    content_len = 0
+
+    for string in strings:
+        if content_len + len(string) > printable_size:
+            string[0] = string[0][:printable_size - content_len]
+
+        color = get_item_color(id, panel_data, items_len - 1, string[1])
+
+        screen().addstr(
+            y,  # + 1 because we're in menu coordinates and 0 is the title line
+            x + content_len,
+            string[0],
+            color,
+        )
+
+        content_len += len(string[0])
+
     screen().addstr(
         y,  # + 1 because we're in menu coordinates and 0 is the title line
-        x,
-        name + " " * (printable_size - len(name)),
+        x + content_len,
+        " " * (printable_size - content_len),
         color,
     )
 
