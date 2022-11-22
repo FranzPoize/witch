@@ -1,5 +1,3 @@
-from math import ceil
-
 def split_text_with_wrap(lines, sizex):
     result = []
     for line in lines:

@@ -1,16 +1,8 @@
 from math import ceil
 from curses import (
-    A_BOLD,
     A_DIM,
-    COLOR_BLACK,
-    COLOR_BLUE,
-    COLOR_GREEN,
-    COLOR_WHITE,
     KEY_UP,
     KEY_DOWN,
-    A_REVERSE,
-    init_pair,
-    color_pair,
 )
 from witch.layout_state import (
     add_layout,
@@ -32,7 +24,6 @@ from witch.state import (
     set_cursor,
 )
 from witch.utils import (
-    Percentage,
     split_text_with_wrap,
     get_size_value,
 )

@@ -2,8 +2,8 @@ from witch.layout_state import (
     add_layout,
     get_layout,
 )
-from witch.state import get_data, get_id, push_id, poop_id, get_cursor, set_cursor, get_current_id
-from witch.utils import Percentage, get_size_value
+from witch.state import get_id, push_id, poop_id, get_cursor, set_cursor, get_current_id
+from witch.utils import get_size_value
 
 HORIZONTAL = "horizontal"
 VERTICAL = "vertical"
