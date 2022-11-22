@@ -1,10 +1,24 @@
-from curses import A_BOLD, A_DIM, COLOR_BLACK, COLOR_BLUE, COLOR_GREEN, COLOR_WHITE, KEY_UP, KEY_DOWN, A_REVERSE, init_pair, color_pair
+from math import ceil
+from curses import (
+    A_BOLD,
+    A_DIM,
+    COLOR_BLACK,
+    COLOR_BLUE,
+    COLOR_GREEN,
+    COLOR_WHITE,
+    KEY_UP,
+    KEY_DOWN,
+    A_REVERSE,
+    init_pair,
+    color_pair,
+)
 from witch.layout_state import (
     add_layout,
     get_layout,
 )
 from witch.state import (
     add_as_selectable,
+    get_color,
     get_current_id,
     get_id,
     is_key_pressed,
@@ -17,15 +31,18 @@ from witch.state import (
     selected_id,
     set_cursor,
 )
-from witch.utils import Percentage, split_text_with_wrap, get_scrolling_info
+from witch.utils import (
+    Percentage,
+    split_text_with_wrap,
+    get_size_value,
+)
 from witch.layout import HORIZONTAL, VERTICAL
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
 
+
 def text_buffer(
     title,
-    x,
-    y,
     sizex,
     sizey,
     text,
@@ -36,17 +53,12 @@ def text_buffer(
     id = get_id(title, get_current_id())
     add_as_selectable(id)
     base_layout = get_layout(get_current_id())
-    base_x, base_y = get_cursor()
-    x += base_x
-    y += base_y
+    x, y = get_cursor()
 
     base_size_x, base_size_y = base_layout.size
 
-    if isinstance(sizey, Percentage):
-        sizey = sizey.value(base_size_y)
-
-    if isinstance(sizex, Percentage):
-        sizex = sizex.value(base_size_x)
+    sizey = get_size_value(sizey, base_size_y)
+    sizex = get_size_value(sizex, base_size_x)
 
     if len(title) > sizex - 4:
         title = title[: sizex - 4]
@@ -116,23 +128,143 @@ def text_buffer(
     set_cursor(next_pos)
 
 
-def start_panel(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
+def get_scrolling_border(index, max_index, size, position, border_style):
+    id = get_current_id()
+    panel_data = get_data(id)
+    scroll_offset_index = index - position
+    scroll_oversize = max_index - size
+    scroller_size = max(1, (size - 2) - scroll_oversize)
+    scroll_ratio = scroll_oversize / -(scroller_size - (size - 2))
+
+    if not panel_data:
+        raise Exception("Can't scroll outside panel")
+
+    if panel_data["needs_scrolling"]:
+        if scroll_offset_index == 0:
+            return border_style[8]
+        elif scroll_offset_index == size - 1:
+            return border_style[9]
+        elif (
+            scroll_offset_index > ceil(position / scroll_ratio)
+            and scroll_offset_index - 1 < ceil(position / scroll_ratio) + scroller_size
+        ):
+            return border_style[10]
+
+    return border_style[1]
+
+
+def get_border_color(id):
+    if selected_id() == id:
+        return get_color("panel_selected")
+    else:
+        return A_DIM
+
+
+def get_item_color(id, panel_data, items_len):
+    if panel_data["selected_index"] == items_len and selected_id() == id:
+        return get_color("item_hovered")
+    else:
+        return A_DIM
+
+
+def print_first_elem():
+    pass
+
+
+def print_last_elem():
+    pass
+
+
+def start_same_line(border_style=BASIC_BORDER):
+    id = get_current_id()
+    panel_data = get_data(id)
+    base_layout = get_layout(id)
+    base_layout.size = (base_layout.size[0] - 2, base_layout.size[1])
+    _, sizey = base_layout.size
+    x, y = get_cursor()
+
+    if not panel_data:
+        raise Exception("Same line not in panel")
+
+    if panel_data["same_line_mode"]:
+        raise Exception("Can't nest same line")
+
+    panel_data["items_len"] += 1
+    panel_data["same_line_mode"] = True
+    panel_data["same_line_size"] = 0
+
+    if (
+        panel_data["items_len"] - 1 < panel_data["scroll_position"]
+        or panel_data["items_len"] > panel_data["scroll_position"] + sizey - 2
+    ):
+        return
+
+    border_color = get_border_color(id)
+
+    screen().addstr(
+        y,  # + 1 because we're in menu coordinates and 0 is the title line
+        x,
+        border_style[1],
+        border_color,
+    )
+
+    set_cursor((x + 1, y))
+
+
+def end_same_line(border_style=BASIC_BORDER):
+    id = get_current_id()
+    panel_data = get_data(id)
+    base_layout = get_layout(id)
+    base_layout.size = (base_layout.size[0] + 2, base_layout.size[1])
+    x, y = get_cursor()
+    sizex, sizey = base_layout.size
+
+    if not panel_data:
+        raise Exception("Same line not in panel")
+
+    panel_data["same_line_mode"] = False
+    same_line_size = panel_data["same_line_size"]
+    panel_data["same_line_size"] = 0
+
+    if (
+        panel_data["items_len"] - 1 < panel_data["scroll_position"]
+        or panel_data["items_len"] > panel_data["scroll_position"] + sizey - 2
+    ):
+        return
+
+    border_color = get_border_color(id)
+    end_border = get_scrolling_border(
+        panel_data["items_len"] - 1,
+        panel_data["max_items"],
+        sizey - 2,
+        panel_data["scroll_position"],
+        border_style,
+    )
+
+    try:
+        screen().addstr(
+            y,
+            x + sizex - 2 - same_line_size,
+            end_border,
+            border_color,
+        )
+    except Exception:
+        pass
+
+    set_cursor((x - same_line_size - 1, y + 1))
+
+
+def start_panel(title, sizex, sizey, border_style=BASIC_BORDER):
     id = get_id(title, get_current_id())
     add_as_selectable(id)
     base_layout = get_layout(get_current_id())
-    base_x, base_y = get_cursor()
-    x += base_x
-    y += base_y
+    x, y = get_cursor()
     push_id(id)
-    init_pair(10, COLOR_GREEN, COLOR_BLACK)
 
     base_size_x, base_size_y = base_layout.size
 
-    if isinstance(sizey, Percentage):
-        sizey = sizey.value(base_size_y)
-
-    if isinstance(sizex, Percentage):
-        sizex = sizex.value(base_size_x)
+    sizey = get_size_value(sizey, base_size_y)
+    sizex = get_size_value(sizex, base_size_x)
 
     if len(title) > sizex - 4:
         title = title[: sizex - 4]
@@ -144,29 +276,34 @@ def start_panel(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
             "selected_index": 0,
             "scroll_position": 0,
             "needs_scrolling": False,
-            "max_items" : 1,
-            "items": [],
+            "max_items": 1,
+            "same_line_mode": False,
+            "items_len": 0,
         }
 
-    panel_data["max_items"] = len(panel_data["items"]) if len(panel_data["items"]) > 0 else 1
+        add_data(id, panel_data)
+
+    panel_data["max_items"] = (
+        panel_data["items_len"] if panel_data["items_len"] > 0 else 1
+    )
 
     # Find out if we need scrolling
-    if len(panel_data["items"]) > sizey - 2:
+    if panel_data["items_len"] > sizey - 2:
         panel_data["needs_scrolling"] = True
 
-    color = A_DIM
     # Scrolling items
     if selected_id() == id:
-        color = A_BOLD | color_pair(10)
         selected_index = panel_data["selected_index"]
         if is_key_pressed(chr(KEY_UP)):
             panel_data["selected_index"] = (
                 selected_index - 1
                 if selected_index != 0
-                else len(panel_data["items"]) - 1
+                else panel_data["items_len"] - 1
             )
         if is_key_pressed(chr(KEY_DOWN)):
-            panel_data["selected_index"] = (selected_index + 1) % len(panel_data["items"])
+            panel_data["selected_index"] = (selected_index + 1) % panel_data[
+                "items_len"
+            ]
 
     if panel_data["selected_index"] + 1 > panel_data["scroll_position"] + sizey - 2:
         panel_data["scroll_position"] += 1
@@ -174,12 +311,12 @@ def start_panel(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     if panel_data["selected_index"] < panel_data["scroll_position"]:
         panel_data["scroll_position"] -= 1
 
-    # Remove items 
-    panel_data["items"] = []
-
-    add_data(id, panel_data)
+    # Remove items
+    panel_data["items_len"] = 0
 
     add_layout(id, HORIZONTAL, (sizex, sizey), (x, y))
+
+    color = get_border_color(id)
 
     screen().addstr(
         y,
@@ -193,74 +330,90 @@ def start_panel(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
         color,
     )
 
+    set_cursor((x, y + 1))
 
-def menu_item(name):
+
+def text_item(name, line_sizex=None):
     id = get_current_id()
     base_layout = get_layout(id)
+    x, y = get_cursor()
     sizex, sizey = base_layout.size
-    x, y = base_layout.pos
     panel_data = get_data(id)
 
     if not panel_data:
         raise Exception("No panel data in menu_item. Probably missing encircling panel")
 
     border_style = panel_data["border_style"]
-    items = panel_data["items"]
+    items_len = panel_data["items_len"]
     scroll_position = panel_data["scroll_position"]
+    same_line_mode = panel_data["same_line_mode"]
 
+    if same_line_mode:
+        if line_sizex is not None:
+            sizex = get_size_value(line_sizex, sizex)
+        else:
+            sizex = sizex - panel_data["same_line_size"]
 
-    init_pair(9, COLOR_WHITE, COLOR_BLUE)
+    if not same_line_mode:
+        panel_data["items_len"] += 1
 
-    color = A_DIM
-    border_color = A_DIM
-
-    if selected_id() == id:
-        border_color = A_BOLD | color_pair(10)
-
-    if panel_data["selected_index"] == len(items) and selected_id() == id:
-        color |= color_pair(9) | A_BOLD 
-
-    items.append(name)
-
-    if (
-        len(items) - 1 < scroll_position
-        or len(items) > scroll_position + sizey - 2
-    ):
+    if items_len - 1 < scroll_position or items_len > scroll_position + sizey - 2:
         return
 
-    if len(name) > sizex - 2:
-        name = name[: sizex - 2]
+    printable_size = sizex - 2
 
-    end_border = border_style[1]
-    if panel_data["needs_scrolling"]:
-        end_border = get_scrolling_info(len(items) - 1,
-                                                    panel_data["max_items"],
-                                                    sizey - 2,
-                                                    scroll_position,
-                                                border_style)
+    if same_line_mode:
+        printable_size = sizex
 
-    screen().addstr(
-        y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
-        x,
-        border_style[1],
-        border_color,
+    if len(name) > printable_size:
+        name = name[:printable_size]
+
+    border_color = get_border_color(id)
+    color = get_item_color(id, panel_data, items_len - 1)
+
+    end_border = get_scrolling_border(
+        items_len - 1,
+        panel_data["max_items"],
+        sizey - 2,
+        scroll_position,
+        border_style,
     )
+
+    if not same_line_mode:
+        screen().addstr(
+            y,  # + 1 because we're in menu coordinates and 0 is the title line
+            x,
+            border_style[1],
+            border_color,
+        )
+        x += 1
+
     screen().addstr(
-        y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
-        x + 1,
-        name + " " * (sizex - 2 - len(name)),
+        y,  # + 1 because we're in menu coordinates and 0 is the title line
+        x,
+        name + " " * (printable_size - len(name)),
         color,
     )
-    screen().addstr(
-        y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
-        x + sizex - 1,
-        end_border,
-        border_color,
-    )
+
+    if not same_line_mode:
+        screen().addstr(
+            y,  # + 1 because we're in menu coordinates and 0 is the title line
+            x + sizex - 1,
+            end_border,
+            border_color,
+        )
+
+    # TODO: size is not correct because - 2 is shared between all element in a same line layout
+
+    if same_line_mode:
+        set_cursor((x + printable_size, y))
+        panel_data["same_line_size"] += printable_size
+    else:
+        set_cursor((x, y + 1))
 
     if (
         selected_id() == id
-        and panel_data["selected_index"] == len(items) - 1
+        and panel_data["selected_index"] == items_len - 1
         and is_key_pressed("\n")
     ):
         return True
@@ -279,17 +432,18 @@ def end_panel():
     border_style = panel_data["border_style"]
     poop_id()
 
-    color = A_DIM
-    if selected_id() == id:
-        color = A_BOLD | color_pair(10)
+    color = get_border_color(id)
 
-    for i in range(len(panel_data["items"]) + 1, sizey - 1):
-        screen().addstr(
-            y + i,
-            x,
-            border_style[1] + " " * (sizex - 2) + border_style[1],
-            color,
-        )
+    for i in range(0, sizey - (panel_data["items_len"])):
+        try:
+            screen().addstr(
+                y + i,
+                x,
+                border_style[1] + " " * (sizex - 2) + border_style[1],
+                color,
+            )
+        except Exception:
+            pass
 
     try:
         screen().addstr(

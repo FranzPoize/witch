@@ -1,4 +1,13 @@
-from curses import start_color, wrapper, A_REVERSE, is_term_resized, initscr
+from curses import (
+    start_color,
+    wrapper,
+    COLOR_BLUE,
+    A_REVERSE,
+    A_BOLD,
+    COLOR_GREEN,
+    COLOR_BLACK,
+    COLOR_WHITE,
+)
 from time import perf_counter
 
 from witch.layout_state import (
@@ -6,6 +15,7 @@ from witch.layout_state import (
 )
 
 from witch.state import (
+    add_color,
     get_current_id,
     get_id,
     get_selectables,
@@ -20,11 +30,30 @@ from witch.state import (
     set_screen_size,
     set_key_state,
     is_key_pressed,
-    set_selected_id
+    set_selected_id,
 )
-from witch.widgets import menu_item, text_buffer, start_panel, end_panel, menu_item
-from witch.layout import start_layout, end_layout, HORIZONTAL, VERTICAL
+from witch.widgets import (
+    text_item,
+    text_buffer,
+    start_panel,
+    end_panel,
+    start_same_line,
+    end_same_line,
+)
+from witch.layout import (
+    start_layout,
+    end_layout,
+    HORIZONTAL,
+    VERTICAL,
+)
 from witch.utils import Percentage
+
+
+def witch_init(screen):
+    start_color()
+    load_screen(screen)
+    add_color("panel_selected", COLOR_GREEN, COLOR_BLACK, [A_BOLD])
+    add_color("item_hovered", COLOR_WHITE, COLOR_BLUE)
 
 
 def start_frame():
@@ -47,7 +76,6 @@ def start_frame():
     get_selectables().clear()
 
 
-
 def end_frame():
     if get_current_id() != "root":
         raise Exception("Stack is not clean probably missing end_layout")
@@ -60,8 +88,7 @@ def end_frame():
 
 
 def do_curses(astdscr):
-    start_color()
-    load_screen(astdscr)
+    witch_init(astdscr)
     screen().nodelay(True)
     screen().clear()
     i = 0
@@ -76,7 +103,7 @@ def do_curses(astdscr):
             if is_key_pressed("q"):
                 quit()
             screen().addstr(0, 0, f"Current mode {i} at {fps}", A_REVERSE)
-            set_cursor((0,1))
+            set_cursor((0, 1))
             i += 1
             text = """lmkqjdfklq
 qlmkdf
@@ -88,9 +115,9 @@ qdfqsdf"""
 
             start_frame()
 
-            start_layout("leftbar", VERTICAL, Percentage(50))
+            start_layout("leftbar", VERTICAL, Percentage(49))
             text_buffer(
-                "Hello", 0, 0, Percentage(100), Percentage(100) - 1, text, status="0/3"
+                "Hello", Percentage(100), Percentage(100) - 1, text, status="0/3"
             )
             end_layout()
 
@@ -99,15 +126,20 @@ qdfqsdf"""
             for i in range(100):
                 data.append(f"hello {i}")
 
-            start_panel("Menu2", 0, 0, Percentage(50), Percentage(20))
+            start_panel("Menu2", 22, Percentage(20))
             for item in data:
-                if menu_item(item):
+                start_same_line()
+                if text_item(
+                    item,
+                    10
+                ):
                     test = item
+                text_item("same_line", 10)
+                end_same_line()
             end_panel()
 
-            start_panel("Text panel", 0, 0, Percentage(50), 30)
-            end_panel()
-
+            # start_panel("Text panel", Percentage(51), 30)
+            # end_panel()
 
             end_frame()
             end = perf_counter()

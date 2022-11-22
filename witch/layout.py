@@ -2,8 +2,8 @@ from witch.layout_state import (
     add_layout,
     get_layout,
 )
-from witch.state import get_id, push_id, poop_id, get_cursor, set_cursor, get_current_id
-from witch.utils import Percentage
+from witch.state import get_data, get_id, push_id, poop_id, get_cursor, set_cursor, get_current_id
+from witch.utils import Percentage, get_size_value
 
 HORIZONTAL = "horizontal"
 VERTICAL = "vertical"
@@ -16,16 +16,10 @@ def start_layout(label, direction, size):
     id = get_id(label, parent_id)
     push_id(id)
 
-    if isinstance(size, Percentage):
-        if parent_layout.direction == HORIZONTAL:
-            size = (parent_layout.size[0], size.value(parent_layout.size[1]))
-        else:
-            size = (size.value(parent_layout.size[0]), parent_layout.size[1])
+    if parent_layout.direction == HORIZONTAL:
+        size = (parent_layout.size[0], get_size_value(size, parent_layout.size[1]))
     else:
-        if parent_layout.direction == HORIZONTAL:
-            size = (parent_layout.size[0], size)
-        else:
-            size = (size, parent_layout.size[1])
+        size = (get_size_value(size, parent_layout.size[0]), parent_layout.size[1])
 
     add_layout(id, direction, size, get_cursor())
 

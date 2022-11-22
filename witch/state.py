@@ -116,3 +116,23 @@ def is_key_pressed(key):
 
 def input_buffer():
     return state_input_buffer
+
+current_color_index = 9 
+colors_index = dict()
+color_mods = dict()
+
+def add_color(name, foreground, background, mods=[]):
+    global colors_index
+    global current_color_index
+    global color_mods
+
+    curses.init_pair(current_color_index, foreground, background)
+    colors_index[name] = current_color_index
+    color_mods[name] = mods
+    current_color_index += 1
+
+def get_color(name):
+    mods = 0
+    for mod in color_mods[name]:
+        mods |= mod
+    return curses.color_pair(colors_index[name]) | mods
