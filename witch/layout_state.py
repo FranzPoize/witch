@@ -7,7 +7,7 @@ from witch.utils import Percentage
 @dataclass
 class Layout:
     direction: str
-    size: Union[int, Percentage]
+    size: tuple[Union[int, Percentage], Union[int, Percentage]]
     pos: tuple[int, int]
 
 

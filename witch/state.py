@@ -1,5 +1,5 @@
 import curses
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 state_selectable_ids: list[str] = [] 
 
@@ -37,7 +37,7 @@ def add_data(id, data):
     state_data[id] = data
 
 
-def get_data(id) -> Union[dict, bool]:
+def get_data(id) -> Union[dict, Literal[False]]:
     if id in state_data:
         return state_data[id]
     else:

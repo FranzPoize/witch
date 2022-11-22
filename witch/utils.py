@@ -1,3 +1,4 @@
+from math import ceil
 
 def split_text_with_wrap(lines, sizex):
     result = []
@@ -19,11 +20,10 @@ class Percentage:
         if isinstance(other, int):
             self.offset = other
             return self
+        raise Exception("Percentage can only be added to int")
 
     def __radd__(self, other):
-        if isinstance(other, int):
-            self.offset = other
-            return self
+        return self.__add__(other)
 
     def __sub__(self, other):
         return self + (-other)
@@ -31,21 +31,17 @@ class Percentage:
     def __rsub__(self, other):
         return self + (-other)
 
-def get_scrolling_info(index, max_index, size, position):
-    start = False
-    in_bar = False
-    end = False
-
+def get_scrolling_info(index, max_index, size, position, border_style):
     scroll_offset_index = index - position
     scroll_oversize = (max_index - size)
     scroller_size = max(1, (size - 2) - scroll_oversize)
     scroll_ratio = scroll_oversize / - (scroller_size - (size - 2))
 
     if scroll_offset_index == 0:
-        start = True
+        return border_style[8]
     elif scroll_offset_index == size - 1: 
-        end = True
-    elif scroll_offset_index > position / scroll_ratio and scroll_offset_index - 1 < position / scroll_ratio + scroller_size:
-        in_bar = True
+        return border_style[9]
+    elif scroll_offset_index > ceil(position / scroll_ratio) and scroll_offset_index - 1 < ceil(position / scroll_ratio) + scroller_size:
+        return border_style[10]
 
-    return (start, in_bar, end)
+    return border_style[1]

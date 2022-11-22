@@ -34,6 +34,7 @@ def text_buffer(
     wrap_lines=False,
 ):
     id = get_id(title, get_current_id())
+    add_as_selectable(id)
     base_layout = get_layout(get_current_id())
     base_x, base_y = get_cursor()
     x += base_x
@@ -173,6 +174,7 @@ def start_panel(title, x, y, sizex, sizey, border_style=BASIC_BORDER):
     if panel_data["selected_index"] < panel_data["scroll_position"]:
         panel_data["scroll_position"] -= 1
 
+    # Remove items 
     panel_data["items"] = []
 
     add_data(id, panel_data)
@@ -198,9 +200,14 @@ def menu_item(name):
     sizex, sizey = base_layout.size
     x, y = base_layout.pos
     panel_data = get_data(id)
+
+    if not panel_data:
+        raise Exception("No panel data in menu_item. Probably missing encircling panel")
+
     border_style = panel_data["border_style"]
     items = panel_data["items"]
     scroll_position = panel_data["scroll_position"]
+
 
     init_pair(9, COLOR_WHITE, COLOR_BLUE)
 
@@ -208,11 +215,10 @@ def menu_item(name):
     border_color = A_DIM
 
     if selected_id() == id:
-        color = A_BOLD
         border_color = A_BOLD | color_pair(10)
 
     if panel_data["selected_index"] == len(items) and selected_id() == id:
-        color |= color_pair(9) 
+        color |= color_pair(9) | A_BOLD 
 
     items.append(name)
 
@@ -227,16 +233,11 @@ def menu_item(name):
 
     end_border = border_style[1]
     if panel_data["needs_scrolling"]:
-        start, in_bar, end = get_scrolling_info(len(items) - 1,
+        end_border = get_scrolling_info(len(items) - 1,
                                                     panel_data["max_items"],
                                                     sizey - 2,
-                                                    scroll_position)
-        if start:
-            end_border = border_style[8]
-        elif end: 
-            end_border = border_style[9]
-        elif in_bar:
-            end_border = border_style[10]
+                                                    scroll_position,
+                                                border_style)
 
     screen().addstr(
         y + len(items) - scroll_position, # + 1 because we're in menu coordinates and 0 is the title line
@@ -271,6 +272,10 @@ def end_panel():
     sizex, sizey = base_layout.size
     x, y = base_layout.pos
     panel_data = get_data(id)
+
+    if not panel_data:
+        raise Exception("No panel data in menu_item. Probably missing encircling panel")
+
     border_style = panel_data["border_style"]
     poop_id()
 
