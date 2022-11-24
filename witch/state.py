@@ -46,6 +46,7 @@ state_data = dict()
 def add_data(id, data):
     global state_data
     state_data[id] = data
+    state_data[id]["touch"] = True
 
 
 def get_data(id) -> Union[dict, Literal[False]]:
@@ -53,6 +54,18 @@ def get_data(id) -> Union[dict, Literal[False]]:
         return state_data[id]
     else:
         return False
+
+def reset_data_touch():
+    global state_data
+    for data in state_data:
+        state_data[data]["touch"] = False
+
+def delete_untouch_data():
+    global state_data
+
+    for data in dict(state_data):
+        if not state_data[data]["touch"]:
+            del state_data[data]
 
 state_screen_size = (0, 0)
 

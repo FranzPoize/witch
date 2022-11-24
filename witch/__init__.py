@@ -21,11 +21,13 @@ from witch.state import (
     add_bg_color,
     add_color,
     add_text_color,
+    delete_untouch_data,
     get_current_id,
     get_id,
     get_selectables,
     input_buffer,
     is_key_pressed,
+    reset_data_touch,
     screen,
     load_screen,
     select_next,
@@ -68,6 +70,9 @@ def start_frame():
     y, x = screen().getmaxyx()
     add_layout(id, VERTICAL, (x, y), (0, 0))
 
+    # reset data touch status
+    reset_data_touch()
+
     # handle screen resize
     old_x, old_y = screen_size()
     y, x = screen().getmaxyx()
@@ -86,6 +91,8 @@ def end_frame():
     if get_current_id() != "root":
         raise Exception("Stack is not clean probably missing end_layout")
     set_cursor((0, 0))
+
+    delete_untouch_data()
 
     if input_buffer() == 9:
         select_next()

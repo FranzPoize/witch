@@ -280,6 +280,8 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
         }
 
         add_data(id, panel_data)
+    else:
+        panel_data["touch"] = True
 
     panel_data["max_items"] = (
         panel_data["items_len"] if panel_data["items_len"] > 0 else 1
