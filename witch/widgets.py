@@ -22,6 +22,7 @@ from witch.state import (
     get_data,
     selected_id,
     set_cursor,
+    set_selected_id,
 )
 from witch.utils import (
     split_text_with_wrap,
@@ -246,6 +247,7 @@ def end_same_line(border_style=BASIC_BORDER):
 
 
 def start_panel(title, sizex, sizey, border_style=BASIC_BORDER):
+def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BORDER):
     id = get_id(title, get_current_id())
     add_as_selectable(id)
     base_layout = get_layout(get_current_id())
@@ -262,6 +264,8 @@ def start_panel(title, sizex, sizey, border_style=BASIC_BORDER):
 
     panel_data = get_data(id)
     if not panel_data:
+        if start_selected:
+            set_selected_id(id)
         panel_data = {
             "border_style": border_style,
             "selected_index": 0,
