@@ -29,6 +29,7 @@ from witch.state import (
     screen,
     load_screen,
     select_next,
+    select_prev,
     set_cursor,
     screen_size,
     set_screen_size,
@@ -88,6 +89,9 @@ def end_frame():
 
     if input_buffer() == 9:
         select_next()
+
+    if input_buffer() == 353:
+        select_prev()
 
     screen().refresh()
 

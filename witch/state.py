@@ -30,6 +30,17 @@ def select_next():
         else:
             pass
 
+def select_prev():
+    global state_selected_id
+    try:
+        selected_index = next(i for i, v in enumerate(state_selectable_ids) if v == state_selected_id)
+        state_selected_id = state_selectable_ids[(selected_index - 1) if selected_index - 1 >= 0 else len(state_selectable_ids) - 1]
+    except StopIteration:
+        if len(state_selectable_ids) > 0:
+            state_selected_id = state_selectable_ids[0]
+        else:
+            pass
+
 state_data = dict()
 
 def add_data(id, data):
