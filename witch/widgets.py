@@ -350,7 +350,7 @@ def text_item(content, line_sizex=None):
     items_len = panel_data["items_len"]
 
     if items_len - 1 < scroll_position or items_len > scroll_position + sizey - 2:
-        return
+        return (False, False)
 
     printable_size = sizex - 2
 
@@ -393,19 +393,20 @@ def text_item(content, line_sizex=None):
     content_len = 0
 
     for string in strings:
-        if content_len + len(string) > printable_size:
-            string[0] = string[0][:printable_size - content_len]
+        text = string[0]
+        if content_len + len(text) > printable_size:
+            text = text[:printable_size - content_len]
 
         color = get_item_color(id, panel_data, items_len - 1, string[1])
 
         screen().addstr(
             y,  # + 1 because we're in menu coordinates and 0 is the title line
             x + content_len,
-            string[0],
+            text,
             color,
         )
 
-        content_len += len(string[0])
+        content_len += len(text)
 
     screen().addstr(
         y,  # + 1 because we're in menu coordinates and 0 is the title line
@@ -431,12 +432,18 @@ def text_item(content, line_sizex=None):
     else:
         set_cursor((x, y + 1))
 
+    hovered = False
+    pressed = False
+
     if (
         selected_id() == id
         and panel_data["selected_index"] == items_len - 1
-        and is_key_pressed("\n")
     ):
-        return True
+        hovered = True
+        if is_key_pressed("\n"):
+            pressed = True
+
+    return (hovered, pressed)
 
 
 def end_panel():
