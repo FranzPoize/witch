@@ -32,6 +32,10 @@ from witch.layout import HORIZONTAL, VERTICAL
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
 
+POSITION_CENTER = "pos_center"
+POSITION_CENTER_HORIZ = "pos_center_horiz"
+POSITION_CENTER_VERTICAL = "pos_center_vert"
+
 
 def text_buffer(
     title,
@@ -326,6 +330,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
 
     set_cursor((x, y + 1))
 
+    return id
 
 def text_item(content, line_sizex=None):
     id = get_current_id()
@@ -492,3 +497,45 @@ def end_panel():
         next_pos = (base_x + sizex, base_y)
 
     set_cursor(next_pos)
+
+
+def start_floating_panel(title, position, sizex, sizey):
+
+    maxy, maxx = screen().getmaxyx()
+    sizex = get_size_value(sizex, maxx)
+    sizey = get_size_value(sizey, maxy)
+
+    if isinstance(position, tuple):
+        x, y = position
+        if not isinstance(x, int) and x == POSITION_CENTER_HORIZ:
+            x = (maxx - sizex) / 2
+        if not isinstance(y, int):
+            y = (maxy - sizey) / 2
+    elif position == POSITION_CENTER:
+        y = (maxy - sizey) / 2
+        x = (maxx - sizex) / 2
+    else:
+        x, y = (0, 0)
+
+    x = round(x)
+    y = round(y)
+
+    set_cursor((x, y))
+
+    id = get_id(f"{title}_modal_wrapper")
+    add_layout(id, HORIZONTAL, (sizex, sizey), (x,y))
+    push_id(id)
+    return start_panel(title, sizex, sizey)
+
+def end_floating_panel():
+    end_panel()
+    id = poop_id()
+    layout = get_layout(id)
+
+    if layout.direction == HORIZONTAL:
+        next_pos = (layout.pos[0], layout.pos[1] + layout.size[1])
+    else:
+        next_pos = (layout.pos[0] + layout.size[0], layout.pos[1])
+
+    set_cursor(next_pos)
+
