@@ -246,7 +246,6 @@ def end_same_line(border_style=BASIC_BORDER):
     set_cursor((x - same_line_size - 1, y + 1))
 
 
-def start_panel(title, sizex, sizey, border_style=BASIC_BORDER):
 def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BORDER):
     id = get_id(title, get_current_id())
     add_as_selectable(id)
