@@ -16,7 +16,7 @@ def start_layout(label, direction, size):
     id = get_id(label, parent_id)
     push_id(id)
 
-    if parent_layout.direction == HORIZONTAL:
+    if parent_layout.direction == VERTICAL:
         size = (parent_layout.size[0], get_size_value(size, parent_layout.size[1]))
     else:
         size = (get_size_value(size, parent_layout.size[0]), parent_layout.size[1])
