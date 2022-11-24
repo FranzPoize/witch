@@ -479,7 +479,7 @@ def end_panel():
 
     try:
         screen().addstr(
-            sizey - 1,
+            y + sizey - (panel_data["items_len"] + 2),
             x,
             border_style[3] + border_style[0] * (sizex - 2) + border_style[4],
             color,
