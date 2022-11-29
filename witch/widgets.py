@@ -466,18 +466,19 @@ def text_item(content, line_sizex=None, selectable=True):
 
 
 def end_panel():
-    id = get_current_id()
-    base_layout = get_layout(id)
-    sizex, sizey = base_layout.size
-    base_x, base_y = base_layout.pos
-    x, y = get_cursor()
+    id = poop_id()
     panel_data = get_data(id)
+    panel_layout = get_layout(id)
+    layout_id = get_current_id()
+    base_layout = get_layout(layout_id)
+    sizex, sizey = panel_layout.size
+    base_x, base_y = panel_layout.pos
+    x, y = get_cursor()
 
     if not panel_data:
         raise Exception("No panel data in menu_item. Probably missing encircling panel")
 
     border_style = panel_data["border_style"]
-    poop_id()
 
     color = get_border_color(id)
 
