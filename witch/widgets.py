@@ -383,6 +383,9 @@ def text_item(content, line_sizex=None, selectable=True):
             else:
                 strings.append((c, "default"))
 
+    for i, s in enumerate(strings):
+        if not isinstance(s[0], str):
+            strings[i] = (str(s[0]), s[1])
 
     border_color = get_border_color(id)
 
