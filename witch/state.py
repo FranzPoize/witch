@@ -136,7 +136,12 @@ def get_key_state(key):
     return False if key not in state_inputs else state_inputs[ord(key)]
 
 def is_key_pressed(key):
-    return False if ord(key) not in state_inputs else state_inputs[ord(key)]["pressed"]
+    if ord(key) in state_inputs:
+        result = state_inputs[ord(key)]["pressed"]
+        state_inputs[ord(key)]["pressed"] = False
+    else:
+        result = False
+    return result
 
 def input_buffer():
     return state_input_buffer
