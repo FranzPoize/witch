@@ -36,6 +36,10 @@ POSITION_CENTER = "pos_center"
 POSITION_CENTER_HORIZ = "pos_center_horiz"
 POSITION_CENTER_VERTICAL = "pos_center_vert"
 
+SELECTION_DIRECTION_DOWN = 1
+SELECTION_DIRECTION_UP = 2
+
+# TODO: make a proper Error when we use more than the layout size
 
 def text_buffer(
     title,
@@ -272,6 +276,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
         panel_data = {
             "border_style": border_style,
             "selected_index": 0,
+            "selection_direction": 0,
             "scroll_position": 0,
             "needs_scrolling": False,
             "max_items": 1,
@@ -283,9 +288,6 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
     else:
         panel_data["touch"] = True
 
-    if panel_data["selected_index"] == panel_data["max_items"]:
-        panel_data["selected_index"] = 0
-
     panel_data["max_items"] = (
         panel_data["items_len"] if panel_data["items_len"] > 0 else 1
     )
@@ -295,18 +297,21 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
         panel_data["needs_scrolling"] = True
 
     # Scrolling items
+    # Bypassing 
+
     if selected_id() == id:
         selected_index = panel_data["selected_index"]
         if is_key_pressed(chr(KEY_UP)):
-            panel_data["selected_index"] = (
-                selected_index - 1
-                if selected_index != 0
-                else panel_data["items_len"] - 1
-            )
+            panel_data["selection_direction"] = SELECTION_DIRECTION_UP
+            panel_data["selected_index"] = selected_index - 1
         if is_key_pressed(chr(KEY_DOWN)):
-            panel_data["selected_index"] = (selected_index + 1) % panel_data[
-                "items_len"
-            ]
+            panel_data["selection_direction"] = SELECTION_DIRECTION_DOWN
+            panel_data["selected_index"] = selected_index + 1
+
+    if panel_data["selected_index"] == panel_data["items_len"]:
+        panel_data["selected_index"] = 0
+    if panel_data["selected_index"] == -1:
+        panel_data["selected_index"] = panel_data["items_len"] - 1 
 
     if panel_data["selected_index"] + 1 > panel_data["scroll_position"] + sizey - 2:
         panel_data["scroll_position"] += 1
@@ -459,6 +464,11 @@ def text_item(content, line_sizex=None, selectable=True):
             hovered = True
             if is_key_pressed("\n"):
                 pressed = True
+        # TODO: To avoid taking X frame (X is the number of unselectable item before
+        # this one) we could store the number of unselectable previous item
+        # and go up that much
+        elif panel_data["selection_direction"] == SELECTION_DIRECTION_UP:
+            panel_data["selected_index"] -= 1
         else:
             panel_data["selected_index"] += 1
 
