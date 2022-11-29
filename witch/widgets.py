@@ -283,6 +283,9 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
     else:
         panel_data["touch"] = True
 
+    if panel_data["selected_index"] == panel_data["max_items"]:
+        panel_data["selected_index"] = 0
+
     panel_data["max_items"] = (
         panel_data["items_len"] if panel_data["items_len"] > 0 else 1
     )
@@ -334,7 +337,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
 
     return id
 
-def text_item(content, line_sizex=None):
+def text_item(content, line_sizex=None, selectable=True):
     id = get_current_id()
     base_layout = get_layout(id)
     x, y = get_cursor()
@@ -449,9 +452,12 @@ def text_item(content, line_sizex=None):
         selected_id() == id
         and panel_data["selected_index"] == items_len - 1
     ):
-        hovered = True
-        if is_key_pressed("\n"):
-            pressed = True
+        if selectable:
+            hovered = True
+            if is_key_pressed("\n"):
+                pressed = True
+        else:
+            panel_data["selected_index"] += 1
 
     return (hovered, pressed)
 
