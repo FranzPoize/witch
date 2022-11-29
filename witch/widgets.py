@@ -160,8 +160,8 @@ def get_border_color(id):
         return A_DIM
 
 
-def get_item_color(id, panel_data, items_len, name="default"):
-    if panel_data["selected_index"] == items_len and selected_id() == id:
+def get_item_color(id, panel_data, items_len, name, selectable):
+    if panel_data["selected_index"] == items_len and selected_id() == id and selectable:
         return get_color(f"{name}_hovered")
     else:
         return get_color(f"{name}")
@@ -418,7 +418,7 @@ def text_item(content, line_sizex=None, selectable=True):
         if content_len + len(text) > printable_size:
             text = text[:printable_size - content_len]
 
-        color = get_item_color(id, panel_data, items_len - 1, string[1])
+        color = get_item_color(id, panel_data, items_len - 1, string[1], selectable)
 
         screen().addstr(
             y,  # + 1 because we're in menu coordinates and 0 is the title line
