@@ -1,6 +1,7 @@
 from math import ceil
 from curses import (
     A_DIM,
+    A_REVERSE,
     KEY_UP,
     KEY_DOWN,
 )
@@ -216,6 +217,7 @@ def end_same_line(border_style=BASIC_BORDER):
     panel_data = get_data(id)
     base_layout = get_layout(id)
     base_layout.size = (base_layout.size[0] + 2, base_layout.size[1])
+    basex, _ = base_layout.pos
     x, y = get_cursor()
     sizex, sizey = base_layout.size
 
@@ -244,14 +246,14 @@ def end_same_line(border_style=BASIC_BORDER):
     try:
         screen().addstr(
             y,
-            x + sizex - 2 - same_line_size,
+            x,
             end_border,
             border_color,
         )
     except Exception:
         pass
 
-    set_cursor((x - same_line_size - 1, y + 1))
+    set_cursor((basex, y + 1))
 
 
 def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BORDER):
@@ -282,6 +284,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
             "max_items": 1,
             "same_line_mode": False,
             "items_len": 0,
+            "color_mod": 0
         }
 
         add_data(id, panel_data)
@@ -345,6 +348,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
 def text_item(content, line_sizex=None, selectable=True):
     id = get_current_id()
     base_layout = get_layout(id)
+    basex, basey = base_layout.pos
     x, y = get_cursor()
     sizex, sizey = base_layout.size
     panel_data = get_data(id)
@@ -352,29 +356,7 @@ def text_item(content, line_sizex=None, selectable=True):
     if not panel_data:
         raise Exception("No panel data in menu_item. Probably missing encircling panel")
 
-    border_style = panel_data["border_style"]
-    scroll_position = panel_data["scroll_position"]
-    same_line_mode = panel_data["same_line_mode"]
-
-    if same_line_mode:
-        if line_sizex is not None:
-            sizex = get_size_value(line_sizex, sizex)
-        else:
-            sizex = sizex - panel_data["same_line_size"]
-
-    if not same_line_mode:
-        panel_data["items_len"] += 1
-
-    items_len = panel_data["items_len"]
-
-    if items_len - 1 < scroll_position or items_len > scroll_position + sizey - 2:
-        return (False, False)
-
-    printable_size = sizex - 2
-
-    if same_line_mode:
-        printable_size = sizex
-
+    # Split content for color formatting
     strings = []
 
     if isinstance(content, tuple):
@@ -392,19 +374,43 @@ def text_item(content, line_sizex=None, selectable=True):
         if not isinstance(s[0], str):
             strings[i] = (str(s[0]), s[1])
 
+    border_style = panel_data["border_style"]
+    scroll_position = panel_data["scroll_position"]
+    same_line_mode = panel_data["same_line_mode"]
+    color_mod = panel_data["color_mod"]
+
+    if same_line_mode:
+        if line_sizex is not None:
+            sizex = get_size_value(line_sizex, sizex)
+        else:
+            sizex = sizex - panel_data["same_line_size"]
+    else:
+        panel_data["items_len"] += 1
+
+    items_len = panel_data["items_len"]
+
+    if items_len - 1 < scroll_position or items_len > scroll_position + sizey - 2:
+        return (False, False)
+
+    printable_size = sizex - 2
+
+    if same_line_mode:
+        printable_size = sizex
+    else:
+        end_border = get_scrolling_border(
+            items_len - 1,
+            panel_data["max_items"],
+            sizey - 2,
+            scroll_position,
+            border_style,
+        )
+
     border_color = get_border_color(id)
 
-    end_border = get_scrolling_border(
-        items_len - 1,
-        panel_data["max_items"],
-        sizey - 2,
-        scroll_position,
-        border_style,
-    )
 
     if not same_line_mode:
         screen().addstr(
-            y,  # + 1 because we're in menu coordinates and 0 is the title line
+            y, 
             x,
             border_style[1],
             border_color,
@@ -413,45 +419,48 @@ def text_item(content, line_sizex=None, selectable=True):
 
     content_len = 0
 
+    color = 0
     for string in strings:
-        text = string[0]
+        text, color_id = string
         if content_len + len(text) > printable_size:
             text = text[:printable_size - content_len]
 
-        color = get_item_color(id, panel_data, items_len - 1, string[1], selectable)
+        color = get_item_color(id, panel_data, items_len - 1, color_id, selectable)
 
         screen().addstr(
-            y,  # + 1 because we're in menu coordinates and 0 is the title line
-            x + content_len,
+            y,
+            x,
             text,
-            color,
+            color | color_mod,
         )
+        x += len(text)
 
         content_len += len(text)
 
     screen().addstr(
         y,  # + 1 because we're in menu coordinates and 0 is the title line
-        x + content_len,
+        x,
         " " * (printable_size - content_len),
-        color,
+        color | color_mod
     )
+    x += (printable_size - content_len)
 
     if not same_line_mode:
-        x -= 1
         screen().addstr(
             y,  # + 1 because we're in menu coordinates and 0 is the title line
-            x + sizex - 1,
+            x,
             end_border,
             border_color,
         )
+        x += 1
 
     # TODO: size is not correct because - 2 is shared between all element in a same line layout
 
     if same_line_mode:
-        set_cursor((x + printable_size, y))
+        set_cursor((x, y))
         panel_data["same_line_size"] += printable_size
     else:
-        set_cursor((x, y + 1))
+        set_cursor((basex, y + 1))
 
     hovered = False
     pressed = False
@@ -561,3 +570,50 @@ def end_floating_panel():
 
     set_cursor(next_pos)
 
+def start_status_bar(id):
+    id = get_id(id)
+    parent_id = get_current_id()
+    parent_layout = get_layout(parent_id)
+    push_id(id)
+    sizex, _ = parent_layout.size
+    sizey = 3
+    add_layout(id, HORIZONTAL, (sizex, sizey), parent_layout.pos)
+
+    panel_data = get_data(id)
+    if not panel_data:
+        panel_data = {
+            "border_style": [],
+            "selected_index": 0,
+            "selection_direction": 0,
+            "scroll_position": 0,
+            "needs_scrolling": False,
+            "max_items": 1,
+            "same_line_mode": False,
+            "items_len": 1,
+            "color_mod": A_REVERSE,
+            "same_line_mode": True,
+            "same_line_size": 0,
+        }
+
+        add_data(id, panel_data)
+    else:
+        panel_data["touch"] = True
+
+def end_status_bar():
+    id = poop_id()
+    panel_data = get_data(id)
+    layout = get_layout(id)
+    basex, _ = layout.pos
+    sizex, _ = layout.size
+    x, y = get_cursor()
+    try:
+        screen().addstr(
+                y,
+                x,
+                " " * (x - basex + sizex),
+                panel_data["color_mod"]
+                )
+    except Exception:
+        pass
+            
+    set_cursor((x, y + 1))
