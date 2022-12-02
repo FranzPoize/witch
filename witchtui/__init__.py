@@ -13,11 +13,11 @@ from curses import (
 )
 from time import perf_counter
 
-from witch.layout_state import (
+from witchtui.layout_state import (
     add_layout,
 )
 
-from witch.state import (
+from witchtui.state import (
     add_bg_color,
     add_color,
     add_text_color,
@@ -38,7 +38,7 @@ from witch.state import (
     set_key_state,
     is_key_pressed,
 )
-from witch.widgets import (
+from witchtui.widgets import (
     text_item,
     text_buffer,
     start_panel,
@@ -46,12 +46,12 @@ from witch.widgets import (
     start_same_line,
     end_same_line,
 )
-from witch.layout import (
+from witchtui.layout import (
     start_layout,
     end_layout,
     VERTICAL,
 )
-from witch.utils import Percentage
+from witchtui.utils import Percentage
 
 
 def witch_init(screen):

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
-from witch.utils import Percentage
+from witchtui.utils import Percentage
 
 
 @dataclass

@@ -5,11 +5,11 @@ from curses import (
     KEY_UP,
     KEY_DOWN,
 )
-from witch.layout_state import (
+from witchtui.layout_state import (
     add_layout,
     get_layout,
 )
-from witch.state import (
+from witchtui.state import (
     add_as_selectable,
     get_color,
     get_current_id,
@@ -25,11 +25,11 @@ from witch.state import (
     set_cursor,
     set_selected_id,
 )
-from witch.utils import (
+from witchtui.utils import (
     split_text_with_wrap,
     get_size_value,
 )
-from witch.layout import HORIZONTAL, VERTICAL
+from witchtui.layout import HORIZONTAL, VERTICAL
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
 
@@ -135,7 +135,10 @@ def get_scrolling_border(index, max_index, size, position, border_style):
     scroll_offset_index = index - position
     scroll_oversize = max_index - size
     scroller_size = max(1, (size - 2) - scroll_oversize)
-    scroll_ratio = scroll_oversize / -(scroller_size - (size - 2))
+    if scroll_oversize != 0:
+        scroll_ratio = scroll_oversize / - (scroller_size - (size - 2))
+    else:
+        scroll_ratio = 1
 
     if not panel_data:
         raise Exception("Can't scroll outside panel")
@@ -504,7 +507,7 @@ def end_panel():
     for i in range(0, sizey - ((panel_data["items_len"] + 2))):
         try:
             screen().addstr(
-                y + i,
+                y,
                 x,
                 border_style[1] + " " * (sizex - 2) + border_style[1],
                 color,
@@ -512,9 +515,11 @@ def end_panel():
         except Exception:
             pass
 
+        y += 1
+
     try:
         screen().addstr(
-            y + sizey - (panel_data["items_len"] + 2),
+            y,
             x,
             border_style[3] + border_style[0] * (sizex - 2) + border_style[4],
             color,
