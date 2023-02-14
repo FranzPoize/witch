@@ -1,14 +1,11 @@
+from curses import A_DIM, A_REVERSE, KEY_DOWN, KEY_UP
+import curses
 from math import ceil
-from curses import (
-    A_DIM,
-    A_REVERSE,
-    KEY_UP,
-    KEY_DOWN,
-)
 from witchtui.layout_state import (
     add_layout,
     get_layout,
 )
+from witchtui.errors import LayoutException
 from witchtui.state import (
     add_as_selectable,
     get_color,
@@ -116,7 +113,7 @@ def text_buffer(
             + border_style[7]
             + border_style[4],
         )
-    except Exception:
+    except curses.error:
         pass
 
     layout = get_layout(get_current_id())
@@ -141,7 +138,7 @@ def get_scrolling_border(index, max_index, size, position, border_style):
         scroll_ratio = 1
 
     if not panel_data:
-        raise Exception("Can't scroll outside panel")
+        raise LayoutException("Can't scroll outside panel")
 
     if panel_data["needs_scrolling"]:
         if scroll_offset_index == 0:
@@ -188,10 +185,10 @@ def start_same_line(border_style=BASIC_BORDER):
     x, y = get_cursor()
 
     if not panel_data:
-        raise Exception("Same line not in panel")
+        raise LayoutException("Same line not in panel")
 
     if panel_data["same_line_mode"]:
-        raise Exception("Can't nest same line")
+        raise LayoutException("Can't nest same line")
 
     panel_data["items_len"] += 1
     panel_data["same_line_mode"] = True
@@ -225,7 +222,7 @@ def end_same_line(border_style=BASIC_BORDER):
     sizex, sizey = base_layout.size
 
     if not panel_data:
-        raise Exception("Same line not in panel")
+        raise LayoutException("Same line not in panel")
 
     panel_data["same_line_mode"] = False
     same_line_size = panel_data["same_line_size"]
@@ -253,7 +250,7 @@ def end_same_line(border_style=BASIC_BORDER):
             end_border,
             border_color,
         )
-    except Exception:
+    except curses.error:
         pass
 
     set_cursor((basex, y + 1))
@@ -357,7 +354,7 @@ def text_item(content, line_sizex=None, selectable=True):
     panel_data = get_data(id)
 
     if not panel_data:
-        raise Exception("No panel data in menu_item. Probably missing encircling panel")
+        raise LayoutException("Text item is not in a panel")
 
     # Split content for color formatting
     strings = []
@@ -489,7 +486,19 @@ def text_item(content, line_sizex=None, selectable=True):
 def is_item_hovered():
     id = get_current_id()
     panel_data = get_data(id)
-    if selected_id() == id and panel_data["selected_index"] == panel_data["items_len"] - 1:
+
+    if not panel_data:
+        raise LayoutException("text_item is not in a panel")
+
+    selected_id_value = selected_id()
+
+    if selected_id_value is None:
+        raise LayoutException("is_item_hovered needs to be placed in a panel with a least one text_item")
+
+    if (
+         selected_id_value == id
+        and panel_data["selected_index"] == panel_data["items_len"] - 1
+    ):
         return True
 
 def end_panel():
@@ -503,7 +512,7 @@ def end_panel():
     x, y = get_cursor()
 
     if not panel_data:
-        raise Exception("No panel data in menu_item. Probably missing encircling panel")
+        raise LayoutException("No panel data in menu_item. Probably missing encircling panel")
 
     border_style = panel_data["border_style"]
 
@@ -517,7 +526,7 @@ def end_panel():
                 border_style[1] + " " * (sizex - 2) + border_style[1],
                 color,
             )
-        except Exception:
+        except curses.error:
             pass
 
         y += 1
@@ -529,7 +538,7 @@ def end_panel():
             border_style[3] + border_style[0] * (sizex - 2) + border_style[4],
             color,
         )
-    except Exception:
+    except curses.error:
         pass
 
     if base_layout.direction == VERTICAL:
@@ -617,13 +626,8 @@ def end_status_bar():
     sizex, _ = layout.size
     x, y = get_cursor()
     try:
-        screen().addstr(
-                y,
-                x,
-                " " * (x - basex + sizex),
-                panel_data["color_mod"]
-                )
-    except Exception:
+        screen().addstr(y, x, " " * (x - basex + sizex), panel_data["color_mod"])
+    except curses.error:
         pass
             
     set_cursor((x, y + 1))
