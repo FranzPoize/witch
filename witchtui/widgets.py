@@ -484,8 +484,13 @@ def text_item(content, line_sizex=None, selectable=True):
         else:
             panel_data["selected_index"] += 1
 
-    return (hovered, pressed)
+    return pressed
 
+def is_item_hovered():
+    id = get_current_id()
+    panel_data = get_data(id)
+    if selected_id() == id and panel_data["selected_index"] == panel_data["items_len"] - 1:
+        return True
 
 def end_panel():
     id = poop_id()
