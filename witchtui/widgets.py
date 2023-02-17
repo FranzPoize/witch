@@ -1,5 +1,5 @@
-from curses import A_DIM, A_REVERSE, KEY_DOWN, KEY_UP
 import curses
+from curses import A_DIM, A_REVERSE, KEY_DOWN, KEY_UP
 from math import ceil
 
 from witchtui.errors import LayoutException
@@ -21,7 +21,12 @@ from witchtui.state import (
     set_cursor,
     set_selected_id,
 )
-from witchtui.utils import print_token_list, create_token_list, get_size_value, print_token_list, split_text_with_wrap
+from witchtui.utils import (
+    create_token_list,
+    get_size_value,
+    print_token_list,
+    split_text_with_wrap,
+)
 
 BASIC_BORDER = ["─", "│", "┐", "└", "┘", "┌", "╴", "╶", "▲", "▼", "█"]
 
@@ -44,8 +49,8 @@ def text_buffer(
     border_style=BASIC_BORDER,
     wrap_lines=False,
 ):
-    id = get_id(title, get_current_id())
-    add_as_selectable(id)
+    stack_id = get_id(title, get_current_id())
+    add_as_selectable(stack_id)
     base_layout = get_layout(get_current_id())
     x, y = get_cursor()
 
@@ -123,8 +128,8 @@ def text_buffer(
 
 
 def get_scrolling_border(index, max_index, size, position, border_style):
-    id = get_current_id()
-    panel_data = get_data(id)
+    stack_id = get_current_id()
+    panel_data = get_data(stack_id)
     scroll_offset_index = index - position
     scroll_oversize = max_index - size
     scroller_size = max(1, (size - 2) - scroll_oversize)
@@ -139,9 +144,9 @@ def get_scrolling_border(index, max_index, size, position, border_style):
     if panel_data["needs_scrolling"]:
         if scroll_offset_index == 0:
             return border_style[8]
-        elif scroll_offset_index == size - 1:
+        if scroll_offset_index == size - 1:
             return border_style[9]
-        elif (
+        if (
             scroll_offset_index > ceil(position / scroll_ratio)
             and scroll_offset_index - 1 < ceil(position / scroll_ratio) + scroller_size
         ):
@@ -150,26 +155,16 @@ def get_scrolling_border(index, max_index, size, position, border_style):
     return border_style[1]
 
 
-def get_border_color(id):
-    if selected_id() == id:
+def get_border_color(stack_id):
+    if selected_id() == stack_id:
         return get_color("panel_selected")
     else:
         return A_DIM
 
-
-
-def print_first_elem():
-    pass
-
-
-def print_last_elem():
-    pass
-
-
 def start_same_line(border_style=BASIC_BORDER):
-    id = get_current_id()
-    panel_data = get_data(id)
-    base_layout = get_layout(id)
+    stack_id = get_current_id()
+    panel_data = get_data(stack_id)
+    base_layout = get_layout(stack_id)
     base_layout.size = (base_layout.size[0] - 2, base_layout.size[1])
     _, sizey = base_layout.size
     x, y = get_cursor()
@@ -190,7 +185,7 @@ def start_same_line(border_style=BASIC_BORDER):
     ):
         return
 
-    border_color = get_border_color(id)
+    border_color = get_border_color(stack_id)
 
     screen().addstr(
         y,  # + 1 because we're in menu coordinates and 0 is the title line
@@ -203,9 +198,9 @@ def start_same_line(border_style=BASIC_BORDER):
 
 
 def end_same_line(border_style=BASIC_BORDER):
-    id = get_current_id()
-    panel_data = get_data(id)
-    base_layout = get_layout(id)
+    stack_id = get_current_id()
+    panel_data = get_data(stack_id)
+    base_layout = get_layout(stack_id)
     base_layout.size = (base_layout.size[0] + 2, base_layout.size[1])
     basex, _ = base_layout.pos
     x, y = get_cursor()
@@ -215,7 +210,6 @@ def end_same_line(border_style=BASIC_BORDER):
         raise LayoutException("Same line not in panel")
 
     panel_data["same_line_mode"] = False
-    same_line_size = panel_data["same_line_size"]
     panel_data["same_line_size"] = 0
 
     if (
@@ -224,7 +218,7 @@ def end_same_line(border_style=BASIC_BORDER):
     ):
         return
 
-    border_color = get_border_color(id)
+    border_color = get_border_color(stack_id)
     end_border = get_scrolling_border(
         panel_data["items_len"] - 1,
         panel_data["max_items"],
@@ -247,11 +241,11 @@ def end_same_line(border_style=BASIC_BORDER):
 
 
 def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BORDER):
-    id = get_id(title, get_current_id())
-    add_as_selectable(id)
+    stack_id = get_id(title, get_current_id())
+    add_as_selectable(stack_id)
     base_layout = get_layout(get_current_id())
     x, y = get_cursor()
-    push_id(id)
+    push_id(stack_id)
 
     base_size_x, base_size_y = base_layout.size
 
@@ -261,10 +255,10 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
     if len(title) > sizex - 4:
         title = title[: sizex - 4]
 
-    panel_data = get_data(id)
+    panel_data = get_data(stack_id)
     if not panel_data:
         if start_selected:
-            set_selected_id(id)
+            set_selected_id(stack_id)
         panel_data = {
             "border_style": border_style,
             "selected_index": 0,
@@ -277,7 +271,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
             "color_mod": 0,
         }
 
-        add_data(id, panel_data)
+        add_data(stack_id, panel_data)
     else:
         panel_data["touch"] = True
 
@@ -290,14 +284,12 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
         panel_data["needs_scrolling"] = True
 
     # Scrolling items
-    # Bypassing
-
-    if selected_id() == id:
+    if selected_id() == stack_id:
         selected_index = panel_data["selected_index"]
-        if is_key_pressed(chr(KEY_UP)):
+        if is_key_pressed(chr(KEY_UP)) or is_key_pressed("k"):
             panel_data["selection_direction"] = SELECTION_DIRECTION_UP
             panel_data["selected_index"] = selected_index - 1
-        if is_key_pressed(chr(KEY_DOWN)):
+        if is_key_pressed(chr(KEY_DOWN)) or is_key_pressed("j"):
             panel_data["selection_direction"] = SELECTION_DIRECTION_DOWN
             panel_data["selected_index"] = selected_index + 1
 
@@ -315,9 +307,9 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
     # Remove items
     panel_data["items_len"] = 0
 
-    add_layout(id, HORIZONTAL, (sizex, sizey), (x, y))
+    add_layout(stack_id, HORIZONTAL, (sizex, sizey), (x, y))
 
-    color = get_border_color(id)
+    color = get_border_color(stack_id)
 
     screen().addstr(
         y,
@@ -333,7 +325,7 @@ def start_panel(title, sizex, sizey, start_selected=False, border_style=BASIC_BO
 
     set_cursor((x, y + 1))
 
-    return id
+    return stack_id
 
 
 def text_item(content, line_sizex=None, selectable=True):
@@ -430,14 +422,34 @@ def text_item(content, line_sizex=None, selectable=True):
 
 def tree_node(title):
     layout_id = get_current_id()
-    stack_id = get_id(title, )
+    panel_data = get_data(layout_id)
+    stack_id = get_id(str(title), layout_id)
     base_layout = get_layout(layout_id)
     basex, basey = base_layout.pos
     sizex, sizey = base_layout.size
     x, y = get_cursor()
-    if s
-    pass
+
+    if not panel_data:
+        raise LayoutException("tree_node must be in a layout")
+
+    if panel_data["same_line_mode"]:
+        raise LayoutException("Can't place tree node in same line mode")
     
+
+    if "tree_node_opened" not in panel_data:
+        panel_data["tree_node_opened"] = set()
+
+    tree_node_opened = panel_data["tree_node_opened"]
+
+    opened = stack_id in tree_node_opened
+
+    if text_item(title):
+        if stack_id in tree_node_opened:
+            tree_node_opened.remove(stack_id)
+        else:
+            tree_node_opened.add(stack_id)
+
+    return opened
 
 def is_item_hovered():
     id = get_current_id()

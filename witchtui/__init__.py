@@ -1,22 +1,21 @@
-from itertools import accumulate
 from curses import (
+    A_BOLD,
     A_DIM,
+    A_REVERSE,
+    COLOR_BLACK,
+    COLOR_BLUE,
+    COLOR_GREEN,
     COLOR_MAGENTA,
+    COLOR_WHITE,
     start_color,
     wrapper,
-    COLOR_BLUE,
-    A_REVERSE,
-    A_BOLD,
-    COLOR_GREEN,
-    COLOR_BLACK,
-    COLOR_WHITE,
 )
+from itertools import accumulate
 from time import perf_counter
 
-from witchtui.layout_state import (
-    add_layout,
-)
-
+from witchtui.errors import LayoutException, WitchException, WrappingCurseException
+from witchtui.layout import HORIZONTAL, VERTICAL, end_layout, start_layout
+from witchtui.layout_state import add_layout
 from witchtui.state import (
     add_bg_color,
     add_color,
@@ -27,44 +26,61 @@ from witchtui.state import (
     get_selectables,
     input_buffer,
     is_key_pressed,
+    load_screen,
     reset_data_touch,
     screen,
-    load_screen,
+    screen_size,
     select_next,
+    selected_id,
+    set_selected_id,
     select_prev,
     set_cursor,
-    screen_size,
-    set_screen_size,
     set_key_state,
-    is_key_pressed,
-)
-from witchtui.widgets import (
-    text_item,
-    text_buffer,
-    start_panel,
-    end_panel,
-    start_same_line,
-    end_same_line,
-)
-from witchtui.layout import (
-    start_layout,
-    end_layout,
-    VERTICAL,
+    set_screen_size,
 )
 from witchtui.utils import Percentage
+from witchtui.widgets import (
+    is_item_hovered,
+    tree_node,
+    end_panel,
+    end_same_line,
+    start_panel,
+    start_same_line,
+    text_buffer,
+    text_item,
+    start_floating_panel,
+    end_floating_panel,
+    start_status_bar,
+    end_status_bar,
+)
 
 
-def witch_init(screen):
+def witch_init(init_screen):
+    """Init a curses window for witchtui
+
+    Parameters
+    ----------
+    init_screen: a curses window object
+    """
     start_color()
-    screen.nodelay(True)
-    screen.clear()
-    load_screen(screen)
+    init_screen.nodelay(True)
+    init_screen.clear()
+    load_screen(init_screen)
     add_color("panel_selected", COLOR_GREEN, COLOR_BLACK, [A_BOLD])
     add_bg_color(COLOR_BLACK, COLOR_BLUE)
     add_text_color("default", COLOR_WHITE, [A_DIM])
 
 
 def start_frame():
+    """Starts a witchtui frame
+
+    Example
+    -------
+    while(True):
+        start_frame()
+        text_item()
+        end_frame()
+    """
     # setting up root
     id = get_id("root")
     y, x = screen().getmaxyx()
@@ -88,6 +104,15 @@ def start_frame():
 
 
 def end_frame():
+    """Ends a witchtui frame
+
+    Example
+    -------
+    while(True):
+        start_frame()
+        text_item()
+        end_frame()
+    """
     if get_current_id() != "root":
         raise Exception("Stack is not clean probably missing end_layout")
     set_cursor((0, 0))
@@ -101,68 +126,3 @@ def end_frame():
         select_prev()
 
     screen().refresh()
-
-def do_curses(astdscr):
-    witch_init(astdscr)
-    add_text_color("test", COLOR_MAGENTA)
-    frame_count = 0
-    fps = [0] * 100
-    start = 0
-    end = 1
-    test = ""
-    try:
-        while True:
-            fps[frame_count % 100] = 1.0 / (end - start)
-            real_fps = accumulate(fps)
-            for i in real_fps:
-                real_fps = i / 100
-            start = perf_counter()
-            if is_key_pressed("q"):
-                quit()
-            screen().addstr(0, 0, f"Current mode {frame_count} at {real_fps}", A_REVERSE)
-            set_cursor((0, 1))
-            frame_count += 1
-            text = """lmkqjdfklq
-qlmkdf
-qldlmfjqdfqsdf
-qdfqsdfqsdf
-qdfqsdf"""
-
-            text += f"\n{test}"
-
-            start_frame()
-
-            start_layout("leftbar", VERTICAL, Percentage(49))
-            text_buffer(
-                "Hello", Percentage(100), Percentage(100) - 1, text, status="0/3"
-            )
-            end_layout()
-
-            data = []
-
-            for i in range(100):
-                data.append(f"hello {i}")
-
-            start_panel("Menu2", Percentage(51), Percentage(20))
-            for item in data:
-                start_same_line()
-                if text_item(
-                    item,
-                    10
-                ):
-                    test = item
-                text_item(("same_line", "test"))
-                end_same_line()
-            end_panel()
-
-            # start_panel("Text panel", Percentage(51), 30)
-            # end_panel()
-
-            end_frame()
-            end = perf_counter()
-    except (KeyboardInterrupt, SystemExit):
-        pass
-
-
-def run():
-    wrapper(do_curses)
